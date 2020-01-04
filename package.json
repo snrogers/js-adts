@@ -1,0 +1,27 @@
+{
+  "name": "@snrogers/monads",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "daggy": "^1.4.0",
+    "fantasy-land": "^4.0.1",
+    "lodash": "^4.17.15",
+    "monet": "^0.9.0",
+    "ramda": "^0.26.1",
+    "stringify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/register": "^7.6.2",
+    "eslint": "^6.5.1",
+    "eslint-plugin-jest": "^23.0.4",
+    "jest": "^24.9.0"
+  }
+}
