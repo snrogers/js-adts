@@ -5,7 +5,7 @@ import { always, curry, identity } from 'ramda'
 // ----------------------------------------------------------------- //
 // Standalone
 // ----------------------------------------------------------------- //
-export const Reader = Daggy.tagged('Reader', [ '_fn' ])
+const Reader = Daggy.tagged('Reader', [ '_fn' ])
 Reader.of = value => Reader(env => value)
 Reader.ask = () => Reader(env => env)
 Reader.runReader = curry((env, reader) => reader.runReader(env))
@@ -28,7 +28,7 @@ Reader.prototype['fantasy-land/map'] = Reader.prototype.map
 // ----------------------------------------------------------------- //
 // Transformer
 // ----------------------------------------------------------------- //
-export const ReaderT = Monad => {
+const ReaderT = Monad => {
   const ReaderTMonad = Daggy.tagged(`ReaderT${Monad}}`, [ '_fn' ])
   ReaderTMonad.lift = m => ReaderTMonad(always(m))
   ReaderTMonad.of = a => ReaderTMonad(env => Monad.of(a))
@@ -48,9 +48,9 @@ export const ReaderT = Monad => {
   ReaderTMonad.prototype.map = function(fn) {
     return ReaderTMonad(env => {
       const m = this._fn(env)
-      return m.map(a => {
-        return fn(a)
-      })
+      return m.map(
+        a => fn(a)
+      )
     })
   }
   ReaderTMonad.prototype.runReader = function(env) { return this._fn(env) }
@@ -67,4 +67,8 @@ export const ReaderT = Monad => {
 // ----------------------------------------------------------------- //
 // Default and PointFree Exports
 // ----------------------------------------------------------------- //
-export default Reader
+module.exports = Reader
+module.exports.ReaderT = ReaderT
+module.exports.runReader = curry(
+  (env, reader) => reader.runReader(env)
+)

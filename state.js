@@ -5,7 +5,7 @@ import { always, compose, curry } from 'ramda'
 // ----------------------------------------------------------------- //
 // Standalone
 // ----------------------------------------------------------------- //
-export const State = Daggy.tagged('State', [ '_fn' ])
+const State = Daggy.tagged('State', [ '_fn' ])
 State.of = val => State(state => [ val, state ])
 State.get = () => State(state => [ state, state ])
 State.modify = fn => State(state => [ null, fn(state) ])
@@ -41,7 +41,7 @@ State.prototype.ap = function(stateWithFn) {
 // ----------------------------------------------------------------- //
 // Transformer
 // ----------------------------------------------------------------- //
-export const StateT = M => {
+const StateT = M => {
   const StateTM = Daggy.tagged(`StateT${M}`, [ '_fn' ])
   StateTM.of = val => StateTM(s => M.of([ val, s ]))
   StateTM.get = () => StateTM(s => M.of([ s, s ]))
@@ -78,11 +78,11 @@ export const StateT = M => {
     return m
   }
   StateTM.prototype.evalState = function(initState) {
-    const m = this._fn(initState)
+    const m = this.runState(initState)
     return m.map(([ v, s ]) => v)
   }
   StateTM.prototype.execState = function(initState) {
-    const m = this._fn(initState)
+    const m = this.runState(initState)
     return m.map(([ v, s ]) => s)
   }
 
@@ -92,13 +92,14 @@ export const StateT = M => {
 // ----------------------------------------------------------------- //
 // Default and PointFree Exports
 // ----------------------------------------------------------------- //
-export default State
-export const runState = curry(
+module.exports = State
+module.exports.StateT = StateT
+module.exports.runState = curry(
   (monad, initState) => monad.runState(initState)
 )
-export const evalState = curry(
+module.exports.evalState = curry(
   (monad, initState) => monad.evalState(initState)
 )
-export const execState = curry(
+module.exports.execState = curry(
   (monad, initState) => monad.execState(initState)
 )

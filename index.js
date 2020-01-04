@@ -1,5 +1,5 @@
-import Identity from 'src/identity'
-import Reader from 'src/reader'
-import State from 'src/state'
+import Identity from 'identity'
+import Reader from 'reader'
+import State from 'state'
 
 export { Identity, Reader, State }

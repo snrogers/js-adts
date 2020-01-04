@@ -2,9 +2,10 @@
   "name": "@snrogers/monads",
   "version": "0.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup index.js --file dist.js --format cjs"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +23,7 @@
     "@babel/register": "^7.6.2",
     "eslint": "^6.5.1",
     "eslint-plugin-jest": "^23.0.4",
-    "jest": "^24.9.0"
+    "jest": "^24.9.0",
+    "rollup": "^1.27.14"
   }
 }
