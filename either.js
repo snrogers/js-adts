@@ -63,8 +63,8 @@ const EitherT = Monad => {
     return EitherTMonad(() => {
       return m.chain(inner => {
         return inner.cata({ // Either
-          Left: always(inner), // TODO:
-          Right: _fn => fn(_fn())._fn(), // Returns an M(Either)
+          Left: always(inner),
+          Right: _fn => fn(_fn())._fn(), // TODO: Look into how FL phrases this w/ `fold()`
         })
       })
     })

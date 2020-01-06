@@ -1,5 +1,6 @@
 import Daggy from 'daggy'
 import { always, compose } from 'ramda'
+import { ap, chain, map, of } from 'fantasy-land'
 
 
 // ----------------------------------------------------------------- //
