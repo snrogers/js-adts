@@ -88,7 +88,10 @@ describe('MonadError Monad', () => {
 describe('MonadErrorTIdentity Monad', () => {
   const MonadErrorTIdentity = MonadErrorT(Identity)
   MonadErrorTIdentity.prototype.runMonadError = (monadErrorRun => {
-    return function() { return this._fn().valueOf()._fn() }
+    return function() {
+      const id = monadErrorRun.call(this)
+      return id.valueOf()
+    }
   })(MonadErrorTIdentity.prototype.runMonadError)
 
   describe('runMonadError', () => {
@@ -111,12 +114,13 @@ describe('MonadErrorTIdentity Monad', () => {
   })
 
   describe('chain', () => {
-    it('composes Valid computations', () => {
+    it.only('composes Valid computations', () => {
       const monadError = MonadErrorTIdentity.of(2)
       const chainedMonadError = monadError.chain(
         a => MonadErrorTIdentity.of(a * 7),
       )
       const output = chainedMonadError.runMonadError()
+      console.log('output', output.toString())
       expect(output).toBe(14)
     })
 

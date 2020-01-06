@@ -1,6 +1,5 @@
 import Daggy from 'daggy'
 import { always, compose, curry } from 'ramda'
-import { chain, map, of } from 'fantasy-land'
 
 
 // ----------------------------------------------------------------- //
@@ -53,12 +52,12 @@ MonadError.prototype.runMonadError = function() { return this._fn() }
 // Transformer
 // ----------------------------------------------------------------- //
 const MonadErrorT = Monad => {
-  const MonadErrorT = Daggy.tagged(`MonadErrorT${Monad}`, [ '_fn' ])
-  MonadErrorT.of = val => MonadErrorT(() => compose(Monad.of, Valid, always)(val))
-  MonadErrorT.throwError = err => MonadErrorT(() => compose(Monad.of, Error, always)(err))
+  const MonadErrorTMonad = Daggy.tagged(`MonadErrorT${Monad}`, [ '_fn' ])
+  MonadErrorTMonad.of = val => MonadErrorTMonad(() => compose(Monad.of, Valid, always)(val))
+  MonadErrorTMonad.throwError = err => MonadErrorTMonad(() => compose(Monad.of, Error, always)(err))
 
-  MonadErrorT.prototype.fold = function(errorFn, validFn) {
-    return MonadErrorT(() => {
+  MonadErrorTMonad.prototype.fold = function(errorFn, validFn) {
+    return MonadErrorTMonad(() => {
       const m = this.runMonadError()
 
       return m.chain(merr => {
@@ -66,14 +65,13 @@ const MonadErrorT = Monad => {
           merr.cata({
             Error: errorFn,
             Valid: validFn,
-          })
-        )
+          }))
       })
     })
   }
 
-  MonadErrorT.prototype.map = function(fn) {
-    return MonadErrorT(() => {
+  MonadErrorTMonad.prototype.map = function(fn) {
+    return MonadErrorTMonad(() => {
       const m = this._fn()
 
       return m.map(inner => {
@@ -85,47 +83,31 @@ const MonadErrorT = Monad => {
       })
     })
   }
-  MonadErrorT.prototype.chain = MonadErrorT.prototype[chain] = function(chainFn) {
-    return MonadErrorT(() => {
-      const m = this.runMonadError()
-      console.log('m', m.toString())
 
-      return m.chain(mErr => {
-        const nextInner = mErr.fold(
-          () => Monad.of(Error.of(mErr.runMonadError())),
-          () => Monad.of(Valid.of(chainFn(mErr.runMonadError)))
-        )
-      })
-    })
-  }
-
-  MonadErrorT.prototype.oldChain = function(fn) {
-    return MonadErrorT(() => {
-      const m = this._fn() // TODO: try const m = this.runMonadError()
-      // console.log('AAA m', m.toString())
+  MonadErrorTMonad.prototype.chain = function(fn) {
+    return MonadErrorTMonad(() => {
+      const m = this._fn()
 
       return m.chain(inner => {
-        // console.log('AAA inner', inner.toString())
         const nextInner = inner.cata({ // MonadError
           Error: always(inner),
           Valid: _fn => fn(_fn())._fn(), // TODO: Look into how FL phrases this w/ `fold()`
         })
-        // console.log('AAA nextInner', nextInner.toString())
         return nextInner
       })
     })
   }
-  MonadErrorT.prototype.ap = function(monadErrorTM) {
+  MonadErrorTMonad.prototype.ap = function(monadErrorTM) {
     return monadErrorTM.chain(fn => this.map(fn))
   }
 
-  MonadErrorT.prototype.runMonadError = function() {
+  MonadErrorTMonad.prototype.runMonadError = function() {
     const m = this._fn()
     return m.map(monadError => monadError.runMonadError())
   }
 
-  MonadErrorT.prototype.catchError = function(errorHandler) {
-    return MonadErrorT(() => {
+  MonadErrorTMonad.prototype.catchError = function(errorHandler) {
+    return MonadErrorTMonad(() => {
       const m = this._fn()
 
       return m.map(inner => {
@@ -138,7 +120,7 @@ const MonadErrorT = Monad => {
     })
   }
 
-  return MonadErrorT
+  return MonadErrorTMonad
 }
 
 

@@ -79,11 +79,13 @@ describe('ErrorAsync Monad', () => {
   describe('ErrorAsync.prototype.chain', () => {
     it('composes a computation `a -> b`', () => {
       expect.assertions(1)
-      ErrorAsync.of(2)
+      const a = ErrorAsync.of(2)
         .chain(a => ErrorAsync.of(a * 3))
         .forkAsync(val => {
+          console.log('val.toString()', val.toString())
           expect(val).toBe(6)
         })
+      console.log('a', a.toString())
     })
 
     it('skips past map() when error is thrown', () => {
@@ -97,7 +99,7 @@ describe('ErrorAsync Monad', () => {
         })
     })
 
-    it.only('skips past chain() when error is thrown', () => {
+    it('skips past chain() when error is thrown', () => {
       expect.assertions(2)
       ErrorAsync.of(2)
         .chain(a => ErrorAsync.of(a * 3))

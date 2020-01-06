@@ -29,9 +29,7 @@ Async.of = Async[of] = Async.settle
 // ----------------------------------------------------------------- //
 Async.prototype.forkAsync = function(settle, _cleanup) {
   const unsafePerformIO = this._unsafePerformIO
-  unsafePerformIO(
-    val => settle(val)
-  )
+  unsafePerformIO(val => settle(val))
 }
 
 

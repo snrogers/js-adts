@@ -6,12 +6,20 @@ const ErrorAsync = MonadErrorT(InfallibleAsync)
 ErrorAsync.prototype.runMonadError = (monadErrorRun => {
   return function(settle) {
     const infallibleAsync = monadErrorRun.call(this)
-    console.log('infallibleAsync', infallibleAsync.toString())
-    console.log('infallibleAsync keys', R.keys(infallibleAsync.__proto__))
     infallibleAsync.forkAsync(val => settle(val))
   }
 })(ErrorAsync.prototype.runMonadError)
 ErrorAsync.prototype.forkAsync = ErrorAsync.prototype.runMonadError
+// ErrorAsync.prototype.forkAsync = ((monadErrorRun, forkAsync) => {
+//   return function(settle) {
+//     console.log('settle', settle)
+//     const infallibleAsync = monadErrorRun.call(this)
+//     console.log('infallibleAsync', infallibleAsync.toString())
+//     forkAsync.call(infallibleAsync)
+//     return
+//     infallibleAsync.forkAsync(val => settle(val))
+//   }
+// })(ErrorAsync.prototype.runMonadError, InfallibleAsync.prototype.forkAsync)
 
 ErrorAsync['@@type'] = 'ErrorAsync'
 
