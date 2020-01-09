@@ -1,5 +1,5 @@
 import Daggy from 'daggy'
-import { always, compose, curry } from 'ramda'
+import R, { always, compose, curry, ifElse } from 'ramda'
 
 
 // ----------------------------------------------------------------- //
@@ -15,10 +15,19 @@ Either.of = val => Right(() => val)
 Left.of = val => Left(() => val)
 Right.of = val => Right(() => val)
 
+Either.fromLeft = curry((defaultVal, either) => either.cata({
+  Left: _fn => _fn(),
+  Right: always(defaultVal),
+}))
+Either.fromRight = curry((defaultVal, either) => either.cata({
+  Left: always(defaultVal),
+  Right: _fn => _fn(),
+}))
+
 Either.prototype.either = curry(function(leftFn, rightFn) {
   return this.cata({
-    Left: left => left.map(leftFn).runEither(),
-    Right: right => right.map(rightFn).runEither(),
+    Left: _fn => leftFn(_fn()),
+    Right: _fn => rightFn(_fn()),
   })
 })
 
@@ -33,7 +42,7 @@ Either.prototype.map = function (fn) {
 Either.prototype.chain = function(fn) {
   return this.cata({
     Left: _fn => Left(_fn),
-    Right: _fn => fn(this._fn()),
+    Right: _fn => fn(_fn()),
   })
 }
 
@@ -41,43 +50,69 @@ Either.prototype.chain = function(fn) {
 // Transformer
 // ----------------------------------------------------------------- //
 const EitherT = Monad => {
-  const EitherTMonad = Daggy.tagged(`EitherT${Monad}`, [ '_fn' ])
-  EitherTMonad.of = val => EitherTMonad(() => compose(Monad.of, Right.of)(val))
-  EitherTMonad.Left = { of:  val => EitherTMonad(() => compose(Monad.of, Left.of)(val)) }
-  EitherTMonad.Right = { of: val => EitherTMonad.of(val) }
+  const EitherT = Daggy.tagged(`EitherT${Monad}`, [ '_fn' ])
+  EitherT.of = val => EitherT(() => compose(Monad.of, Right.of)(val))
+  EitherT.Left = { of:  val => EitherT(() => compose(Monad.of, Left.of)(val)) }
+  EitherT.Right = { of: val => EitherT.of(val) }
 
-  EitherTMonad.prototype.map = function(fn) {
+  EitherT.fromLeftT = curry((defaultVal, eitherT) => {
+    const m = eitherT._fn()
+    return m.map(either => either.cata({
+      Left: _fn => _fn(),
+      Right: always(defaultVal),
+    }))
+  })
+  EitherT.fromRightT = curry((defaultVal, eitherT) => {
+    const m = eitherT._fn()
+    return m.map(either => either.cata({
+      Left: always(defaultVal),
+      Right: _fn => _fn(),
+    }))
+  })
+
+  EitherT.prototype.map = function(fn) {
     const m = this._fn()
-    return EitherTMonad(() => {
-      return m.map(inner => {
-        const either = inner.cata({
-          Left: always(inner),
-          Right: _fn => Right(() => fn(_fn())),
-        })
-        return either
-      })
+    return EitherT(() => {
+      return m.map(either => either.cata({
+        Left: always(either),
+        Right: _fn => Right(compose(fn, _fn)),
+      }))
     })
   }
-  EitherTMonad.prototype.chain = function(fn) {
+  EitherT.prototype.chain = function(fn) {
     const m = this._fn()
-    return EitherTMonad(() => {
+    return EitherT(() => {
       return m.chain(inner => {
         return inner.cata({ // Either
-          Left: always(inner),
-          Right: _fn => fn(_fn())._fn(), // TODO: Look into how FL phrases this w/ `fold()`
+          Left: _fn => Monad.of(Left(_fn)),
+          Right: _fn => {
+            const eitherT = fn(_fn())
+            const m = eitherT._fn()
+            return m
+          },
         })
       })
     })
   }
-  EitherTMonad.prototype.ap = function(eitherTM) {
+
+  EitherT.prototype.ap = function(eitherTM) {
     return eitherTM.chain(fn => this.map(fn))
   }
-  EitherTMonad.prototype.runEither = function() {
+
+  EitherT.prototype.eitherT = curry(function(leftFn, rightFn) {
+    const m = this._fn()
+    return m.map(either => either.cata({
+      Left: _fn => leftFn(_fn()),
+      Right: _fn => rightFn(_fn()),
+    }))
+  })
+
+  EitherT.prototype.runEitherT = function() {
     const m = this._fn()
     return m.map(either => either.runEither())
   }
 
-  return EitherTMonad
+  return EitherT
 }
 
 
@@ -88,12 +123,7 @@ const EitherT = Monad => {
 // ----------------------------------------------------------------- //
 module.exports = Either
 module.exports.EitherT = EitherT
+module.exports.either = curry((leftFn, rightFn, either) => {
+  return either.either(leftFn, rightFn)
+})
 module.exports.runReader = reader => reader.runReader()
-module.exports.fromLeft = curry((defaultVal, either) => either.cata({
-  Left: left => left.runEither(),
-  Right: always(defaultVal),
-}))
-module.exports.fromRight = curry((defaultVal, either) => either.cata({
-  Left: always(defaultVal),
-  Right: right => right.runEither(),
-}))

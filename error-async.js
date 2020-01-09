@@ -9,17 +9,13 @@ ErrorAsync.prototype.runMonadError = (monadErrorRun => {
     infallibleAsync.forkAsync(val => settle(val))
   }
 })(ErrorAsync.prototype.runMonadError)
-ErrorAsync.prototype.forkAsync = ErrorAsync.prototype.runMonadError
-// ErrorAsync.prototype.forkAsync = ((monadErrorRun, forkAsync) => {
-//   return function(settle) {
-//     console.log('settle', settle)
-//     const infallibleAsync = monadErrorRun.call(this)
-//     console.log('infallibleAsync', infallibleAsync.toString())
-//     forkAsync.call(infallibleAsync)
-//     return
-//     infallibleAsync.forkAsync(val => settle(val))
-//   }
-// })(ErrorAsync.prototype.runMonadError, InfallibleAsync.prototype.forkAsync)
+ErrorAsync.prototype.forkAsync = function(settle) {
+
+}
+
+ErrorAsync.prototype._runInner = function(settle) {
+
+}
 
 ErrorAsync['@@type'] = 'ErrorAsync'
 

@@ -53,8 +53,10 @@ MonadError.prototype.runMonadError = function() { return this._fn() }
 // ----------------------------------------------------------------- //
 const MonadErrorT = Monad => {
   const MonadErrorTMonad = Daggy.tagged(`MonadErrorT${Monad}`, [ '_fn' ])
-  MonadErrorTMonad.of = val => MonadErrorTMonad(() => compose(Monad.of, Valid, always)(val))
-  MonadErrorTMonad.throwError = err => MonadErrorTMonad(() => compose(Monad.of, Error, always)(err))
+  MonadErrorTMonad.of = val =>
+    MonadErrorTMonad(() => compose(Monad.of, Valid, always)(val))
+  MonadErrorTMonad.throwError = err =>
+    MonadErrorTMonad(() => compose(Monad.of, Error, always)(err))
 
   MonadErrorTMonad.prototype.fold = function(errorFn, validFn) {
     return MonadErrorTMonad(() => {

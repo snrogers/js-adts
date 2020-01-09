@@ -1,6 +1,15 @@
-import Either, { EitherT } from './either'
+import Either, {
+  EitherT,
+  Left,
+  Right,
+  either,
+  fromLeft,
+  fromRight,
+} from './either'
 import Identity from './identity'
+import R, { curry } from 'ramda'
 
+const noop = () => {}
 
 describe('Either Monad', () => {
   describe('runEither', () => {
@@ -22,12 +31,11 @@ describe('Either Monad', () => {
 
   describe('chain', () => {
     it('composes Right computations', () => {
-      const either = Either.of(2)
-      const chainedEither = either.chain(
-        a => Either.of(a * 7),
-      )
-      const output = chainedEither.runEither()
-      expect(output).toBe(14)
+      const output = Either.of(2)
+        .chain(a => Either.of(a * 3))
+        .chain(a => Either.of(a * 5))
+        .runEither()
+      expect(output).toBe(30)
     })
 
     it('skips past computations when Left', () => {
@@ -51,14 +59,64 @@ describe('Either Monad', () => {
       expect(output).toBe(33)
     })
   })
+
+  describe('either', () => {
+    it('escapes Left after transformation with leftFn', () => {
+      const output = either(a => a * 3, noop, Left.of(2))
+      expect(output).toBe(6)
+    })
+
+    it('escapes Right after transformation with rightFn', () => {
+      const output = either(noop, a => a * 3, Right.of(2))
+      expect(output).toBe(6)
+    })
+  })
+
+
+  describe('fromLeft', () => {
+    it('returns a default value from a Right', () => {
+      const r = Either.Right.of(5)
+      const val = fromLeft('default', r)
+      expect(val).toBe('default')
+    })
+
+    it('returns the computed value from a Left', () => {
+      const l = Either.Left.of(5)
+      const val = fromLeft('default', l)
+      expect(val).toBe(5)
+    })
+  })
+
+  describe('fromRight', () => {
+    it('returns a default value from a Left', () => {
+      const l = Either.Left.of(5)
+      const val = fromRight('default', l)
+      expect(val).toBe('default')
+    })
+
+    it('returns the computed value from a Right', () => {
+      const r = Either.Right.of(5)
+      const val = fromRight('default', r)
+      expect(val).toBe(5)
+    })
+  })
 })
 
 
 describe('EitherTIdentity Monad', () => {
   const EitherTIdentity = EitherT(Identity)
-  EitherTIdentity.prototype.runEither = (eitherRun => {
-    return function() { return this._fn().valueOf()._fn() }
-  })(EitherTIdentity.prototype.runEither)
+  EitherTIdentity.prototype.runEither = function() {
+    return this.runEitherT().valueOf()
+  }
+  EitherTIdentity.prototype.either = curry(function (leftFn, rightFn) {
+    return this.eitherT(leftFn,rightFn).valueOf()
+  })
+  EitherTIdentity.fromLeft = curry((defaultVal, eitherT) =>
+    EitherTIdentity.fromLeftT(defaultVal, eitherT).valueOf()
+  )
+  EitherTIdentity.fromRight = curry((defaultVal, eitherT) =>
+    EitherTIdentity.fromRightT(defaultVal, eitherT).valueOf()
+  )
 
   describe('runEither', () => {
     it('executes the computation within a trivial EitherTIdentity', () => {
@@ -70,34 +128,31 @@ describe('EitherTIdentity Monad', () => {
 
   describe('map', () => {
     it('composes a function into the EitherTIdentity\'s computation', () => {
-      const either = EitherTIdentity.of(2)
-      const mappedEitherTIdentity = either
+      const output = EitherTIdentity.of(2)
         .map(a => a * 3)
         .map(a => a * 5)
         .map(a => a * 7)
-      const output = mappedEitherTIdentity.runEither()
+        .runEither()
       expect(output).toBe(210)
     })
   })
   describe('chain', () => {
     it('composes Right computations', () => {
-      const either = EitherTIdentity.of(2)
-      const chainedEither = either.chain(
-        a => EitherTIdentity.of(a * 7),
-      )
-      const output = chainedEither.runEither()
-      expect(output).toBe(14)
+      const output = EitherTIdentity.of(2)
+        .chain(a => EitherTIdentity.of(a * 3))
+        .chain(a => EitherTIdentity.of(a * 5))
+        .runEither()
+      expect(output).toBe(30)
     })
 
     it('skips past Right computations when Left', () => {
-      const either = EitherTIdentity.of(2)
-      const chainedEither = either
+      const output = EitherTIdentity.of(2)
         .chain(a => EitherTIdentity.of(a * 3))
         .chain(a => EitherTIdentity.Left.of(a * 5))
         .chain(a => EitherTIdentity.of(a * 7))
         .chain(a => EitherTIdentity.of(a * 11))
         .chain(a => EitherTIdentity.Left.of(a * 13))
-      const output = chainedEither.runEither()
+        .runEither()
       expect(output).toBe(30)
     })
   })
@@ -109,6 +164,54 @@ describe('EitherTIdentity Monad', () => {
       const appedEither = valueEither.ap(fnEither)
       const output = appedEither.runEither()
       expect(output).toBe(33)
+    })
+  })
+
+  describe('fromLeft', () => {
+    it('returns a default value from a Right', () => {
+      const r = EitherTIdentity.Right.of(5)
+      const val = EitherTIdentity.fromLeft('default', r)
+      expect(val).toBe('default')
+    })
+
+    it('returns the computed value from a Left', () => {
+      const l = EitherTIdentity.Left.of(5)
+      const val = EitherTIdentity.fromLeft('default', l)
+      expect(val).toBe(5)
+    })
+  })
+
+  describe('either', () => {
+    it('escapes Left after transformation with leftFn', () => {
+      const output = either(
+        a => a * 3,
+        noop,
+        EitherTIdentity.Left.of(2)
+      )
+      expect(output).toBe(6)
+    })
+
+    it('escapes Right after transformation with rightFn', () => {
+      const output = either(
+        noop,
+        a => a * 3,
+        EitherTIdentity.Right.of(2)
+      )
+      expect(output).toBe(6)
+    })
+  })
+
+  describe('fromRight', () => {
+    it('returns a default value from a Left', () => {
+      const l = EitherTIdentity.Left.of(5)
+      const val = EitherTIdentity.fromRight('default', l)
+      expect(val).toBe('default')
+    })
+
+    it('returns the computed value from a Right', () => {
+      const r = EitherTIdentity.Right.of(5)
+      const val = EitherTIdentity.fromRight('default', r)
+      expect(val).toBe(5)
     })
   })
 })

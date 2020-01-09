@@ -13,23 +13,20 @@ describe('Reader Monad', () => {
 
   describe('map', () => {
     it('composes a function into the Reader\'s computation', () => {
-      const reader = Reader.of(2)
-      const mappedReader = reader.map(a => a * 3)
-      const output = mappedReader.runReader()
+      const output = Reader.of(2)
+        .map(a => a * 3)
+        .runReader()
       expect(output).toBe(6)
     })
   })
 
   describe('chain/ask', () => {
     it('exposes `env` within the Reader\'s computation', () => {
-      const reader = Reader.of(2)
-      const chainedReader = reader.chain(
-        a => Reader.ask().map(
-          ({ factor }) => a * factor
-        )
-      )
-      const output = chainedReader.runReader({ factor: 7 })
-      expect(output).toBe(14)
+      const output = Reader.of(2)
+        .chain(a => Reader.ask().map(({ factor }) => a * factor))
+        .chain(a => Reader.ask().map(({ factor }) => a * factor))
+        .runReader({ factor: 7 })
+      expect(output).toBe(98)
     })
   })
 
@@ -47,37 +44,34 @@ describe('Reader Monad', () => {
 
 describe('ReaderTIdentity Monad', () => {
   const ReaderTIdentity = ReaderT(Identity)
-  ReaderTIdentity.prototype.runReader = (readerRun => {
-    return function(env) { return this._fn(env).valueOf() }
-  })(ReaderTIdentity.prototype.runReader)
+  ReaderTIdentity.prototype.runReader = function(env) {
+    return this.runReaderT(env).valueOf()
+  }
 
   describe('runReader', () => {
     it('executes the computation within a trivial ReaderTIdentity', () => {
-      const reader = ReaderTIdentity.of(5)
-      const output = reader.runReader()
+      const output = ReaderTIdentity.of(5).runReader()
       expect(output).toBe(5)
     })
   })
 
   describe('map', () => {
     it('composes a function into the ReaderTIdentity\'s computation', () => {
-      const reader = ReaderTIdentity.of(2)
-      const mappedReaderTIdentity = reader.map(a => a * 3)
-      const output = mappedReaderTIdentity.runReader()
-      expect(output).toBe(6)
+      const output = ReaderTIdentity.of(2)
+        .map(a => a * 3)
+        .map(a => a * 5)
+        .runReader()
+      expect(output).toBe(30)
     })
   })
 
   describe('chain/ask', () => {
     it('exposes `env` within the ReaderTIdentity\'s computation', () => {
-      const reader = ReaderTIdentity.of(2)
-      const chainedReaderTIdentity = reader.chain(
-        a => ReaderTIdentity.ask().map(
-          ({ factor }) => a * factor
-        )
-      )
-      const output = chainedReaderTIdentity.runReader({ factor: 7 })
-      expect(output).toBe(14)
+      const output = ReaderTIdentity.of(2)
+        .chain(a => ReaderTIdentity.ask().map(({ factor }) => a * factor))
+        .chain(a => ReaderTIdentity.ask().map(({ factor }) => a * factor))
+        .runReader({ factor: 7 })
+      expect(output).toBe(98)
     })
   })
 
