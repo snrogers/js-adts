@@ -1,5 +1,5 @@
 import Daggy from 'daggy'
-import { of } from 'fantasy-land'
+import { ap, chain, map, of } from 'fantasy-land'
 import R, { compose, curry } from 'ramda'
 
 
@@ -36,11 +36,11 @@ Async.prototype.forkAsync = function(settle, _cleanup) {
 // ----------------------------------------------------------------- //
 // ADT Methods
 // ----------------------------------------------------------------- //
-Async.prototype.map = function(mapFn) {
+Async.prototype.map = Async.prototype[map] = function(mapFn) {
   return Async(settle => this.forkAsync(compose(settle, mapFn)))
 }
 
-Async.prototype.chain = function(chainFn) {
+Async.prototype.chain = Async.prototype[chain] = function(chainFn) {
   return Async(settle => {
     this.forkAsync(
       val => chainFn(val).forkAsync(settle))

@@ -89,10 +89,9 @@ const MonadErrorT = Monad => {
       })
     })
   }
-
   MonadErrorT.prototype.chain = function(fn) {
-    const m = this._fn()
     return MonadErrorT(() => {
+      const m = this._fn()
       return m.chain(inner => {
         const nextInner = inner.cata({ // MonadError
           Error: _fn => Monad.of(Error(_fn)),
@@ -106,8 +105,8 @@ const MonadErrorT = Monad => {
       })
     })
   }
-  MonadErrorT.prototype.ap = function(monadErrorTM) {
-    return monadErrorTM.chain(fn => this.map(fn))
+  MonadErrorT.prototype.ap = function(monadErrorT) {
+    return monadErrorT.chain(fn => this.map(fn))
   }
 
   MonadErrorT.prototype.runMonadErrorT = function() {
@@ -119,10 +118,15 @@ const MonadErrorT = Monad => {
     return MonadErrorT(() => {
       const m = this._fn()
 
-      return m.map(inner => {
+      return m.chain(inner => {
         const nextInner = inner.cata({ // MonadError
-          Error: _fn => Valid(() => errorHandler(_fn()).runMonadError()), // TODO: Look into how FL phrases this w/ `fold()`
-          Valid: always(inner),
+          Error: _fn => {
+            const monadErrorT = errorHandler(_fn())
+            const m = monadErrorT._fn()
+            return m
+          },
+          Valid: _fn => Monad.of(Valid(_fn)), // TODO: See if this works
+          // Valid: always(inner), // TODO: See if this works
         })
         return nextInner
       })

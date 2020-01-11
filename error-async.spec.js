@@ -1,5 +1,5 @@
 import ErrorAsync from './error-async'
-import R from 'ramda'
+import R, { __, compose, concat } from 'ramda'
 
 const noop = () => {}
 const flow = val => (...fns) => R.pipe(...fns)(val)
@@ -79,13 +79,12 @@ describe('ErrorAsync Monad', () => {
   describe('ErrorAsync.prototype.chain', () => {
     it('composes a computation `a -> b`', () => {
       expect.assertions(1)
-      const a = ErrorAsync.of(2)
+      ErrorAsync.of(2)
         .chain(a => ErrorAsync.of(a * 3))
         .forkAsync(val => {
           console.log('val.toString()', val.toString())
           expect(val).toBe(6)
         })
-      console.log('a', a.toString())
     })
 
     it('skips past map() when error is thrown', () => {
@@ -124,14 +123,13 @@ describe('ErrorAsync Monad', () => {
 
     it('continues computation after `catchError()`', () => {
       expect.assertions(1)
-      ErrorAsync.of(2)
-        .chain(a => ErrorAsync.of(a * 3))
-        .chain(a => ErrorAsync.of(a * 5))
-        .chain(() => ErrorAsync.throwError(1))
+      ErrorAsync.of('a')
+        .chain(a => ErrorAsync.of(a + 'b'))
+        .chain(() => ErrorAsync.throwError('c'))
         .catchError(err => ErrorAsync.of(err))
-        .chain(a => ErrorAsync.of(a * 7))
+        .chain(a => ErrorAsync.of(a + 'd'))
         .forkAsync(output => {
-          expect(output).toBe(7)
+          expect(output).toBe('cd')
         })
     })
   })

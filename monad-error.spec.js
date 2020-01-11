@@ -144,13 +144,13 @@ describe('MonadErrorTIdentity Monad', () => {
     })
 
     it('continues computation after `catchError()`', () => {
-      const monadError = MonadErrorTIdentity.of(2)
-      const chainedMonadError = monadError.chain(a => MonadErrorTIdentity.of(a * 3))
+      const output = MonadErrorTIdentity.of(2)
+        .chain(a => MonadErrorTIdentity.of(a * 3))
         .chain(a => MonadErrorTIdentity.of(a * 5))
         .chain(() => MonadErrorTIdentity.throwError(1))
         .catchError(err => MonadErrorTIdentity.of(err))
         .chain(a => MonadErrorTIdentity.of(a * 7))
-      const output = chainedMonadError.runMonadError()
+        .runMonadError()
 
       expect(output).toBe(7)
     })
