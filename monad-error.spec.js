@@ -1,7 +1,7 @@
 import MonadError, { catchError, throwError, MonadErrorT } from './monad-error'
 import Identity from './identity'
 import Daggy from 'daggy'
-import R, { chain, compose, map } from 'ramda'
+import R, { __, append, concat, chain, compose, map } from 'ramda'
 
 const flow = val => (...fns) => R.pipe(...fns)(val)
 
@@ -87,12 +87,10 @@ describe('MonadError Monad', () => {
 
 describe('MonadErrorTIdentity Monad', () => {
   const MonadErrorTIdentity = MonadErrorT(Identity)
-  MonadErrorTIdentity.prototype.runMonadError = (monadErrorRun => {
-    return function() {
-      const id = monadErrorRun.call(this)
-      return id.valueOf()
-    }
-  })(MonadErrorTIdentity.prototype.runMonadError)
+  MonadErrorTIdentity.prototype.runMonadError = function() {
+    const id = this.runMonadErrorT()
+    return id.valueOf()
+  }
 
   describe('runMonadError', () => {
     it('executes the computation within a trivial MonadErrorTIdentity', () => {
@@ -104,33 +102,30 @@ describe('MonadErrorTIdentity Monad', () => {
 
   describe('map', () => {
     it('composes a function into the MonadErrorTIdentity\'s computation', () => {
-      const monadError = MonadErrorTIdentity.of(2)
-      const mappedMonadError = monadError
+      const output = MonadErrorTIdentity.of(2)
         .map(a => a * 3)
         .map(a => a * 5)
-      const output = mappedMonadError.runMonadError()
+        .runMonadError()
       expect(output).toBe(30)
     })
   })
 
   describe('chain', () => {
-    it.only('composes Valid computations', () => {
-      const monadError = MonadErrorTIdentity.of(2)
-      const chainedMonadError = monadError.chain(
-        a => MonadErrorTIdentity.of(a * 7),
-      )
-      const output = chainedMonadError.runMonadError()
-      console.log('output', output.toString())
-      expect(output).toBe(14)
+    it('composes Valid computations', () => {
+      const output = MonadErrorTIdentity.of('a')
+        .chain(compose(MonadErrorTIdentity.of, concat(__, 'b')))
+        .chain(compose(MonadErrorTIdentity.of, concat(__, 'c')))
+        .runMonadError()
+      expect(output).toBe('abc')
     })
 
     it('skips past computations when error is thrown', () => {
-      const monadError = MonadErrorTIdentity.of(2)
-      const chainedMonadError = monadError.chain(a => MonadErrorTIdentity.of(a * 3))
+      const output = MonadErrorTIdentity.of(2)
+        .chain(a => MonadErrorTIdentity.of(a * 3))
         .chain(() => MonadErrorTIdentity.throwError(new Error('Test Error')))
         .chain(a => MonadErrorTIdentity.of(a * 5))
         .chain(a => MonadErrorTIdentity.of(a * 7))
-      const output = chainedMonadError.runMonadError()
+        .runMonadError()
 
       expect(output).toBeInstanceOf(Error)
       expect(output.message).toBe('Test Error')

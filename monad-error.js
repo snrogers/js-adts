@@ -9,6 +9,7 @@ const MonadError = Daggy.taggedSum('MonadError', {
   Error: [ '_fn' ],
   Valid: [ '_fn' ],
 })
+
 const { Error, Valid } = MonadError
 
 // ----------------------------------------------------------------- //
@@ -21,12 +22,13 @@ MonadError.throwError = err => Error(() => err)
 // ----------------------------------------------------------------- //
 // ADT Methods
 // ----------------------------------------------------------------- //
-MonadError.prototype.fold = function(errorFn, validFn) {
-  return this.cata({
-    Error: errorFn,
-    Valid: validFn,
-  })
-}
+
+// MonadError.prototype.fold = function(errorFn, validFn) {
+//   return this.cata({
+//     Error: errorFn,
+//     Valid: validFn,
+//   })
+// }
 MonadError.prototype.map = function (fn) {
   return this.cata({
     Error: always(this),
@@ -39,7 +41,9 @@ MonadError.prototype.chain = function(fn) {
     Valid: _fn => fn(this._fn()),
   })
 }
-MonadError.prototype.ap = function(monadError) { return monadError.chain(fn => this.map(fn)) }
+MonadError.prototype.ap = function(monadError) {
+  return monadError.chain(fn => this.map(fn))
+}
 MonadError.prototype.catchError = function(errorHandler) {
   return this.cata({
     Error: _fn => errorHandler(_fn()),
@@ -52,28 +56,28 @@ MonadError.prototype.runMonadError = function() { return this._fn() }
 // Transformer
 // ----------------------------------------------------------------- //
 const MonadErrorT = Monad => {
-  const MonadErrorTMonad = Daggy.tagged(`MonadErrorT${Monad}`, [ '_fn' ])
-  MonadErrorTMonad.of = val =>
-    MonadErrorTMonad(() => compose(Monad.of, Valid, always)(val))
-  MonadErrorTMonad.throwError = err =>
-    MonadErrorTMonad(() => compose(Monad.of, Error, always)(err))
+  const MonadErrorT = Daggy.tagged(`MonadErrorT${Monad}`, [ '_fn' ])
+  MonadErrorT.of = val =>
+    MonadErrorT(() => compose(Monad.of, Valid, always)(val))
+  MonadErrorT.throwError = err =>
+    MonadErrorT(() => compose(Monad.of, Error, always)(err))
 
-  MonadErrorTMonad.prototype.fold = function(errorFn, validFn) {
-    return MonadErrorTMonad(() => {
-      const m = this.runMonadError()
+  // MonadErrorT.prototype.fold = function(errorFn, validFn) {
+  //   return MonadErrorT(() => {
+  //     const m = this.runMonadError()
 
-      return m.chain(merr => {
-        return Monad.of(
-          merr.cata({
-            Error: errorFn,
-            Valid: validFn,
-          }))
-      })
-    })
-  }
+  //     return m.chain(merr => {
+  //       return Monad.of(
+  //         merr.cata({
+  //           Error: errorFn,
+  //           Valid: validFn,
+  //         }))
+  //     })
+  //   })
+  // }
 
-  MonadErrorTMonad.prototype.map = function(fn) {
-    return MonadErrorTMonad(() => {
+  MonadErrorT.prototype.map = function(fn) {
+    return MonadErrorT(() => {
       const m = this._fn()
 
       return m.map(inner => {
@@ -86,30 +90,33 @@ const MonadErrorT = Monad => {
     })
   }
 
-  MonadErrorTMonad.prototype.chain = function(fn) {
-    return MonadErrorTMonad(() => {
-      const m = this._fn()
-
+  MonadErrorT.prototype.chain = function(fn) {
+    const m = this._fn()
+    return MonadErrorT(() => {
       return m.chain(inner => {
         const nextInner = inner.cata({ // MonadError
-          Error: always(inner),
-          Valid: _fn => fn(_fn())._fn(), // TODO: Look into how FL phrases this w/ `fold()`
+          Error: _fn => Monad.of(Error(_fn)),
+          Valid: _fn => {
+            const monadErrorT = fn(_fn())
+            const m = monadErrorT._fn()
+            return m
+          },
         })
         return nextInner
       })
     })
   }
-  MonadErrorTMonad.prototype.ap = function(monadErrorTM) {
+  MonadErrorT.prototype.ap = function(monadErrorTM) {
     return monadErrorTM.chain(fn => this.map(fn))
   }
 
-  MonadErrorTMonad.prototype.runMonadError = function() {
+  MonadErrorT.prototype.runMonadErrorT = function() {
     const m = this._fn()
     return m.map(monadError => monadError.runMonadError())
   }
 
-  MonadErrorTMonad.prototype.catchError = function(errorHandler) {
-    return MonadErrorTMonad(() => {
+  MonadErrorT.prototype.catchError = function(errorHandler) {
+    return MonadErrorT(() => {
       const m = this._fn()
 
       return m.map(inner => {
@@ -122,7 +129,7 @@ const MonadErrorT = Monad => {
     })
   }
 
-  return MonadErrorTMonad
+  return MonadErrorT
 }
 
 

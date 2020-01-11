@@ -94,7 +94,6 @@ const EitherT = Monad => {
       })
     })
   }
-
   EitherT.prototype.ap = function(eitherTM) {
     return eitherTM.chain(fn => this.map(fn))
   }
