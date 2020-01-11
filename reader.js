@@ -11,6 +11,7 @@ const Reader = Daggy.tagged('Reader', [ '_fn' ])
 Reader.of = value => Reader(env => value)
 Reader.ask = () => Reader(env => env)
 Reader.runReader = curry((env, reader) => reader.runReader(env))
+
 Reader.prototype.ap = Reader.prototype[ap] = function(readerWithFn) {
   return readerWithFn.chain(fn => this.map(fn))
 }

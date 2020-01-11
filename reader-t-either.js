@@ -5,6 +5,7 @@ import { curry } from 'ramda'
 const ReaderTEither = ReaderT(Either)
 ReaderTEither.Left = { of: val => ReaderTEither(_env => Either.Left.of(val)) }
 ReaderTEither.Right = { of: val => ReaderTEither(_env => Either.Right.of(val)) }
+
 ReaderTEither.fromLeft = curry((defaultValue, env, rte) => {
   const either = rte.runReaderT(env)
   return Either.fromLeft(defaultValue, either)
