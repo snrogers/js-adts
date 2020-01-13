@@ -1,7 +1,6 @@
 import Identity from './identity'
 import State, { StateT } from './state'
 import { multiply } from 'ramda'
-// import StateT from './state-t'
 
 
 describe('State Monad Standalone', () => {
@@ -34,7 +33,7 @@ describe('State Monad Standalone', () => {
       const state = State.of(2)
       const output = state
         .chain(a =>
-          State.get().map(state => state * a)
+          State.get().map(state => state * a),
         ).evalState(5)
       expect(output).toBe(10)
     })
@@ -46,7 +45,7 @@ describe('State Monad Standalone', () => {
           return State.put(7).map(() => a) // replace state
         })
         .chain(a =>
-          State.get().map(state => state * a)
+          State.get().map(state => state * a),
         ).evalState(5)
       expect(output).toBe(14)
     })
@@ -59,7 +58,7 @@ describe('State Monad Standalone', () => {
             .map(() => a) // replace state
         })
         .chain(a =>
-          State.get().map(state => state * a)
+          State.get().map(state => state * a),
         ).evalState(3)
       expect(output).toBe(30)
     })
@@ -69,7 +68,7 @@ describe('State Monad Standalone', () => {
     it('works', () => {
       const state = State.of(3)
       const output = state.ap(
-        State.of(multiply(7))
+        State.of(multiply(7)),
       ).evalState()
       expect(output).toBe(21)
     })
@@ -100,31 +99,23 @@ describe('State Monad Standalone', () => {
   })
 })
 
-describe('State Monad Transformer (StateTIdentity', () => {
+describe.only('State Monad Transformer (StateTIdentity', () => {
   // NOTE: `execState(s)` and `evalState(s)` derive from `runState(s)`,
   // so we only need to update `runState(s)`
   const StateTIdentity = StateT(Identity)
 
-  StateTIdentity.prototype.runState = (stateRun => {
-    return function(initialState) {
-      const identity = stateRun.call(this, initialState)
-      return identity.valueOf()
-    }
-  })(StateTIdentity.prototype.runState)
-
-  StateTIdentity.prototype.evalState = (stateEval => {
-    return function(initialState) {
-      const identity = stateEval.call(this, initialState)
-      return identity.valueOf()
-    }
-  })(StateTIdentity.prototype.evalState)
-
-  StateTIdentity.prototype.execState = (stateExec => {
-    return function(initialState) {
-      const identity = stateExec.call(this, initialState)
-      return identity.valueOf()
-    }
-  })(StateTIdentity.prototype.execState)
+  StateTIdentity.prototype.runState = function(initState) {
+    const identity = this.runStateT(initState)
+    return identity.valueOf()
+  }
+  StateTIdentity.prototype.evalState = function(initState) {
+    const identity = this.evalStateT(initState)
+    return identity.valueOf()
+  }
+  StateTIdentity.prototype.execState = function(initState) {
+    const identity = this.execStateT(initState)
+    return identity.valueOf()
+  }
 
 
   describe('of', () => {
@@ -143,12 +134,12 @@ describe('State Monad Transformer (StateTIdentity', () => {
     })
   })
 
-  describe('chain', () => {
+  describe.only('chain', () => {
     it('works with trivial chaining', () => {
-      const state = StateTIdentity.of(2)
-      const output = state
+      const output = StateTIdentity.of(2)
         .chain(a => StateTIdentity.of(a * 5))
         .evalState()
+
       expect(output).toBe(10)
     })
 
@@ -173,7 +164,7 @@ describe('State Monad Transformer (StateTIdentity', () => {
               .map(state => state * a))
           .evalState(5)
 
-      console.log('output._fn()',output._fn)
+      console.log('output._fn()', output._fn)
       // console.log('output', output.toString())
       expect(output).toBe(14)
     })
@@ -192,7 +183,7 @@ describe('State Monad Transformer (StateTIdentity', () => {
     it('works', () => {
       const state = StateTIdentity.of(3)
       const output = state.ap(
-        StateTIdentity.of(multiply(7))
+        StateTIdentity.of(multiply(7)),
       ).evalState()
       expect(output).toBe(21)
     })

@@ -125,8 +125,7 @@ const MonadErrorT = Monad => {
             const m = monadErrorT._fn()
             return m
           },
-          Valid: _fn => Monad.of(Valid(_fn)), // TODO: See if this works
-          // Valid: always(inner), // TODO: See if this works
+          Valid: _fn => Monad.of(Valid(_fn)),
         })
         return nextInner
       })

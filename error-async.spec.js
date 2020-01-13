@@ -1,13 +1,6 @@
 import ErrorAsync from './error-async'
 import R, { __, compose, concat } from 'ramda'
 
-const noop = () => {}
-const flow = val => (...fns) => R.pipe(...fns)(val)
-
-// console.log('ErrorAsync: ', Object.keys(ErrorAsync))
-// console.log('ErrorAsync.prototype: ', Object.keys(ErrorAsync.prototype))
-// console.log('ErrorAsync: ', ErrorAsync.of('fart').toString())
-
 describe('ErrorAsync Monad', () => {
   describe('ErrorAsync.of', () => {
     it('returns a forkable ErrorAsync', () => {
@@ -19,14 +12,33 @@ describe('ErrorAsync Monad', () => {
     })
   })
 
+  describe('ErrorAsync.defer', () => {
+    it('returns a synchronous ErrorAsync', async () => {
+      expect.assertions(1)
+
+      await ErrorAsync.defer(settle => settle('a'))
+        .forkPromise(val => {
+          expect(val).toBe('a')
+        })
+    })
+
+    it('returns an asynchronous ErrorAsync', async () => {
+      expect.assertions(1)
+
+      await ErrorAsync
+        .defer(settle => setTimeout(() => settle('a'), 0))
+        .forkPromise(val => {
+          expect(val).toBe('a')
+        })
+    })
+  })
+
   describe('ErrorAsync.forkAsync', () => {
     it('evaluates the computation with ErrorAsync', () => {
       expect.assertions(1)
       ErrorAsync.of(2)
         .forkAsync(val => {
-          expect(
-            val
-          ).toBe(2)
+          expect(val).toBe(2)
         })
     })
 
@@ -77,14 +89,11 @@ describe('ErrorAsync Monad', () => {
   })
 
   describe('ErrorAsync.prototype.chain', () => {
-    it('composes a computation `a -> b`', () => {
+    it('composes a computation `a -> mb`', async () => {
       expect.assertions(1)
-      ErrorAsync.of(2)
-        .chain(a => ErrorAsync.of(a * 3))
-        .forkAsync(val => {
-          console.log('val.toString()', val.toString())
-          expect(val).toBe(6)
-        })
+      await ErrorAsync.of(2)
+        .chain(a => ErrorAsync.defer(settle => { settle(a * 3) }))
+        .forkPromise(val => { expect(val).toBe(6) })
     })
 
     it('skips past map() when error is thrown', () => {
@@ -130,6 +139,32 @@ describe('ErrorAsync Monad', () => {
         .chain(a => ErrorAsync.of(a + 'd'))
         .forkAsync(output => {
           expect(output).toBe('cd')
+        })
+    })
+  })
+
+  describe('usage', () => {
+    const nodeFnRej = (rej, _res) => {
+      setTimeout(rej('no'))
+    }
+    const nodeFnRes = (_rej, res) => {
+      setTimeout(res('yes'))
+    }
+
+    it('allows for branching to success before entering monadic context', () => {
+
+    })
+
+    it('allows for branching to success while in monadic context', () => {
+      const asyncRes = () => {
+        return ErrorAsync.of()
+          .chain(() => {
+            nodeFnRes(null, 
+          })
+      }
+      const ErrorAsync.of()
+        .chain(a => {
+          
         })
     })
   })

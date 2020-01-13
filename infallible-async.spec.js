@@ -4,8 +4,26 @@ import R from 'ramda'
 const noop = () => {}
 
 describe('Async Monad', () => {
+  describe('Async(callbackFn)', () => {
+    it('returns a synchronous forkable Async', () => {
+      expect.assertions(1)
+      Async(settle => settle('a'))
+        .forkAsync(val => {
+          expect(val).toBe('a')
+        })
+    })
+
+    it('returns an asynchronous forkable Async', async () => {
+      expect.assertions(1)
+      await Async(settle => setTimeout(() => settle('a'), 0))
+        .forkPromise(val => {
+          expect(val).toBe('a')
+        })
+    })
+  })
+
   describe('Async.of', () => {
-    it('returns a forkable Async', () => {
+    it('returns a synchronous forkable Async', () => {
       expect.assertions(1)
       Async.of(2)
         .forkAsync(val => {
@@ -14,8 +32,19 @@ describe('Async Monad', () => {
     })
   })
 
+  describe('Async.defer', () => {
+    it('returns an asynchronous Async', async () => {
+      expect.assertions(1)
+
+      await Async.of('a')
+        .forkPromise(val => {
+          expect(val).toBe('a')
+        })
+    })
+  })
+
   describe('Async.forkAsync', () => {
-    it('evaluates the computation with Async', () => {
+    it('evaluates a synchronous computation', () => {
       expect.assertions(1)
       Async.of(2)
         .forkAsync(val => {
@@ -23,8 +52,16 @@ describe('Async Monad', () => {
         })
     })
 
-    console.log('it', Object.keys(it))
-    it('can be called multiple times on a single Async instance', () => {
+    it('evaluates an asynchronous computation', async () => {
+      expect.assertions(1)
+      await Async.defer(settle => setTimeout(() => settle(2), 0))
+        .forkPromise(val => {
+          expect(val).toBe(2)
+        })
+    })
+
+
+    it('can be called multiple times on a synchronous Async instance', () => {
       expect.assertions(2)
       const async = Async.of(2)
 
@@ -37,22 +74,35 @@ describe('Async Monad', () => {
       })
     })
 
-    it.skip('[FAILS] returns cached values if called multiple times, rather than re-performing the computation', () => {
+    it('can be called multiple times on an asynchronous Async instance', async () => {
+      expect.assertions(2)
+      const async = Async.defer(settle => setTimeout(() => settle(2), 0))
+
+      await async.forkPromise(val => {
+        expect(val).toBe(2)
+      })
+
+      await async.forkPromise(val => {
+        expect(val).toBe(2)
+      })
+    })
+
+    it('recomputes values if called multiple times', async () => {
       expect.assertions(4)
       const spy = jest.fn(R.identity)
 
-      const async = Async.of(2).map(spy)
+      const async = Async.of(2)
+        .map(spy)
+        .map(R.identity)
 
-      async.forkAsync(val => {
-        console.log('FART')
+      await async.forkPromise(val => {
         expect(val).toBe(2)
         expect(spy).toHaveBeenCalledTimes(1)
       })
 
-      async.forkAsync(val => {
-        console.log('FART')
+      await async.forkPromise(val => {
         expect(val).toBe(2)
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledTimes(2)
       })
     })
   })

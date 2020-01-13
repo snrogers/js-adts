@@ -1,5 +1,6 @@
 import Daggy from 'daggy'
 import R, { always, compose, curry, ifElse } from 'ramda'
+import { debug, error, info } from '@snrogers/utils/logger'
 
 
 // ----------------------------------------------------------------- //
@@ -125,4 +126,5 @@ module.exports.EitherT = EitherT
 module.exports.either = curry((leftFn, rightFn, either) => {
   return either.either(leftFn, rightFn)
 })
-module.exports.runReader = reader => reader.runReader()
+module.exports.runEither = either => either.runEither()
+module.exports.map = curry((mapFn, either) => either.map(mapFn))

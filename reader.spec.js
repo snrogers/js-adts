@@ -5,8 +5,8 @@ import Identity from './identity'
 describe('Reader Monad', () => {
   describe('runReader', () => {
     it('executes the computation within a trivial Reader', () => {
-      const reader = Reader.of(5)
-      const output = reader.runReader()
+      const output = Reader.of(5)
+        .runReader()
       expect(output).toBe(5)
     })
   })
@@ -32,10 +32,9 @@ describe('Reader Monad', () => {
 
   describe('ap', () => {
     it('applies a Reader<fn> to a Reader<value>', () => {
-      const valueReader = Reader.of(3)
-      const fnReader = Reader.of(a => a * 11)
-      const appedReader = valueReader.ap(fnReader)
-      const output = appedReader.runReader()
+      const output = Reader.of(3)
+        .ap(Reader.of(a => a * 11))
+        .runReader()
       expect(output).toBe(33)
     })
   })
@@ -50,7 +49,8 @@ describe('ReaderTIdentity Monad', () => {
 
   describe('runReader', () => {
     it('executes the computation within a trivial ReaderTIdentity', () => {
-      const output = ReaderTIdentity.of(5).runReader()
+      const output = ReaderTIdentity.of(5)
+        .runReader()
       expect(output).toBe(5)
     })
   })
@@ -77,10 +77,9 @@ describe('ReaderTIdentity Monad', () => {
 
   describe('ap', () => {
     it('applies a ReaderTIdentity<fn> to a ReaderTIdentity<value>', () => {
-      const valueReaderTIdentity = ReaderTIdentity.of(3)
-      const fnReaderTIdentity = ReaderTIdentity.of(a => a * 11)
-      const appedReaderTIdentity = valueReaderTIdentity.ap(fnReaderTIdentity)
-      const output = appedReaderTIdentity.runReader()
+      const output = ReaderTIdentity.of(3)
+        .ap(ReaderTIdentity.of(a => a * 11))
+        .runReader()
       expect(output).toBe(33)
     })
   })

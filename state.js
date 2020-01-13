@@ -1,5 +1,6 @@
 import Daggy from 'daggy'
 import { always, compose, curry } from 'ramda'
+import { ap, chain, map } from 'fantasy-land'
 
 
 // ----------------------------------------------------------------- //
@@ -42,30 +43,32 @@ State.prototype.ap = function(stateWithFn) {
 // Transformer
 // ----------------------------------------------------------------- //
 const StateT = M => {
-  const StateTM = Daggy.tagged(`StateT${M}`, [ '_fn' ])
-  StateTM.of = val => StateTM(s => M.of([ val, s ]))
-  StateTM.get = () => StateTM(s => M.of([ s, s ]))
-  StateTM.modify = fn => StateTM(s => M.of([ null, fn(s) ]))
-  StateTM.put = s => StateTM(() => M.of([ null, s ]))
+  const StateT = Daggy.tagged(`StateT${M}`, [ '_fn' ])
+  StateT.of = val => StateT(s => M.of([ val, s ]))
+  StateT.lift = m => StateT(s => m.map(val => [ val, s ]))
 
-  StateTM.prototype.ap = function(stmWithFn) {
+  StateT.get = () => StateT(s => M.of([ s, s ]))
+  StateT.modify = fn => StateT(s => M.of([ null, fn(s) ]))
+  StateT.put = s => StateT(() => M.of([ null, s ]))
+
+  StateT.prototype.ap = StateT.prototype[ap] = function(stmWithFn) {
     return stmWithFn.chain(fn => this.map(fn))
   }
 
-  StateTM.prototype.chain = function(fn) {
-    return StateTM(s0 => {
+  StateT.prototype.chain = StateT.prototype[chain] = function(fn) {
+    return StateT(s0 => {
       const m = this._fn(s0)
 
-      return m.map(([ val, s1 ]) => {
+      return m.chain(([ val, s1 ]) => {
         const stm = fn(val)
-        const [ m, s2 ] = stm.runState(s1)
-        return [ m,s2 ]
+        const mNext = stm._fn(s1)
+        return mNext
       })
     })
   }
 
-  StateTM.prototype.map = function(fn) {
-    return StateTM(s0 => {
+  StateT.prototype.map = StateT.prototype[map] = function(fn) {
+    return StateT(s0 => {
       const m = this._fn(s0)
       return m.map(([ val, s ]) => {
         return [ fn(val), s ]
@@ -73,20 +76,20 @@ const StateT = M => {
     })
   }
 
-  StateTM.prototype.runState = function(initState) {
+  StateT.prototype.runStateT = function(initState) {
     const m = this._fn(initState)
     return m
   }
-  StateTM.prototype.evalState = function(initState) {
-    const m = this.runState(initState)
-    return m.map(([ v, s ]) => v)
+  StateT.prototype.evalStateT = function(initState) {
+    const m = this._fn(initState)
+    return m.map(([ v, _s ]) => v)
   }
-  StateTM.prototype.execState = function(initState) {
-    const m = this.runState(initState)
-    return m.map(([ v, s ]) => s)
+  StateT.prototype.execStateT = function(initState) {
+    const m = this._fn(initState)
+    return m.map(([ _v, s ]) => s)
   }
 
-  return StateTM
+  return StateT
 }
 
 // ----------------------------------------------------------------- //
@@ -95,11 +98,11 @@ const StateT = M => {
 module.exports = State
 module.exports.StateT = StateT
 module.exports.runState = curry(
-  (monad, initState) => monad.runState(initState)
+  (monad, initState) => monad.runState(initState),
 )
 module.exports.evalState = curry(
-  (monad, initState) => monad.evalState(initState)
+  (monad, initState) => monad.evalState(initState),
 )
 module.exports.execState = curry(
-  (monad, initState) => monad.execState(initState)
+  (monad, initState) => monad.execState(initState),
 )

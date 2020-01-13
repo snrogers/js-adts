@@ -8,7 +8,7 @@ import { ap, chain, map } from 'fantasy-land'
 // Standalone
 // ----------------------------------------------------------------- //
 const Reader = Daggy.tagged('Reader', [ '_fn' ])
-Reader.of = value => Reader(env => value)
+Reader.of = value => Reader(_env => value)
 Reader.ask = () => Reader(env => env)
 Reader.runReader = curry((env, reader) => reader.runReader(env))
 
@@ -73,5 +73,5 @@ const ReaderT = M => {
 module.exports = Reader
 module.exports.ReaderT = ReaderT
 module.exports.runReaderT = curry(
-  (env, reader) => reader.runReaderT(env)
+  (env, reader) => reader.runReaderT(env),
 )
