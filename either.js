@@ -2,7 +2,6 @@ import Daggy from 'daggy'
 import R, { always, compose, curry, curryN, filter, ifElse, pipe, zip } from 'ramda'
 import { of, ap, chain, map } from 'fantasy-land'
 
-import { debug, error, info } from '@snrogers/utils/logger'
 import EitherT from './either.transform'
 
 

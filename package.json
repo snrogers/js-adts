@@ -1,6 +1,6 @@
 {
   "name": "@snrogers/monads",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha.1",
   "description": "",
   "main": "dist.js",
   "scripts": {
@@ -10,13 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@snrogers/utils": "0.0.0",
     "daggy": "^1.4.0",
     "fantasy-land": "^4.0.1",
-    "lodash": "^4.17.15",
-    "monet": "^0.9.0",
-    "ramda": "^0.26.1",
-    "stringify": "^5.2.0"
+    "ramda": "^0.26.1"
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
