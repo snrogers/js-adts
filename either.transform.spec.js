@@ -1,11 +1,11 @@
 import { curry } from 'ramda'
 
 import Identity from './identity'
-import EitherT, { either } from './either.transform'
+import EitherT, { either, runEitherT } from './either.transform'
 
 
 // ----------------------------------------------------------------- //
-// Constants and Hlpers
+// Constants and Helpers
 // ----------------------------------------------------------------- //
 const noop = () => {}
 

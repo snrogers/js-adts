@@ -60,6 +60,10 @@ Either.prototype.runEither = function() { return this._fn() }
 // ----------------------------------------------------------------- //
 // Helper Functions
 // ----------------------------------------------------------------- //
+Either.either = curry((leftFn, rightFn, either) => {
+  return either.either(leftFn, rightFn)
+})
+
 Either.fromLeft = curry((defaultVal, either) => either.cata({
   Left: _fn => _fn(),
   Right: always(defaultVal),
@@ -68,6 +72,7 @@ Either.fromRight = curry((defaultVal, either) => either.cata({
   Left: always(defaultVal),
   Right: _fn => _fn(),
 }))
+Either.runEither = either => either.runEither()
 Either.zipEithers = R.curryN(2, pipe(
   (listA, listB) => [ listA, listB ],
   ifElse(([ a, b ]) => a.length !== b.length,
@@ -88,11 +93,6 @@ Either.zipEithers = R.curryN(2, pipe(
 export default Either
 
 export { EitherT, Left, Right }
-export const either = curry((leftFn, rightFn, either) => {
-  return either.either(leftFn, rightFn)
-})
-export const runEither = either => either.runEither()
-
-// Tack named exports onto default export
-Either.either = either
-Either.runEither = runEither
+export const either = Either.either
+export const runEither = Either.runEither
+export const zipEithers = Either.zipEithers
