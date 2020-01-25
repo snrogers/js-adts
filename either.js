@@ -68,7 +68,6 @@ Either.fromRight = curry((defaultVal, either) => either.cata({
   Left: always(defaultVal),
   Right: _fn => _fn(),
 }))
-
 Either.zipEithers = R.curryN(2, pipe(
   (listA, listB) => [ listA, listB ],
   ifElse(([ a, b ]) => a.length !== b.length,
@@ -86,9 +85,14 @@ Either.zipEithers = R.curryN(2, pipe(
 // ----------------------------------------------------------------- //
 // Default and PointFree Exports
 // ----------------------------------------------------------------- //
-module.exports = Either
-module.exports.EitherT = EitherT
-module.exports.either = curry((leftFn, rightFn, either) => {
+export default Either
+
+export { EitherT, Left, Right }
+export const either = curry((leftFn, rightFn, either) => {
   return either.either(leftFn, rightFn)
 })
-module.exports.runEither = either => either.runEither()
+export const runEither = either => either.runEither()
+
+// Tack named exports onto default export
+Either.either = either
+Either.runEither = runEither
