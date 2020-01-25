@@ -1,16 +1,22 @@
 import Either, {
-  EitherT,
   Left,
   Right,
   either,
   fromLeft,
   fromRight,
+  zipEithers,
 } from './either'
-import Identity from './identity'
-import R, { curry } from 'ramda'
 
+
+// ----------------------------------------------------------------- //
+// Constants and Hlpers
+// ----------------------------------------------------------------- //
 const noop = () => {}
 
+
+// ----------------------------------------------------------------- //
+// Tests
+// ----------------------------------------------------------------- //
 describe('Either Monad', () => {
   describe('runEither', () => {
     it('executes the computation within a trivial Either', () => {
@@ -100,119 +106,26 @@ describe('Either Monad', () => {
       expect(val).toBe(5)
     })
   })
-})
 
+  describe('zipEithers', () => {
+    it('returns Left of inputs if the lists aren\'t the same length', () => {
+      const listA = [ Right.of(1) ]
+      const listB = [ Right.of(1), Right.of(2) ]
 
-describe('EitherTIdentity Monad', () => {
-  const EitherTIdentity = EitherT(Identity)
-  EitherTIdentity.prototype.runEither = function() {
-    return this.runEitherT().valueOf()
-  }
-  EitherTIdentity.prototype.either = curry(function (leftFn, rightFn) {
-    return this.eitherT(leftFn,rightFn).valueOf()
-  })
-  EitherTIdentity.fromLeft = curry((defaultVal, eitherT) =>
-    EitherTIdentity.fromLeftT(defaultVal, eitherT).valueOf()
-  )
-  EitherTIdentity.fromRight = curry((defaultVal, eitherT) =>
-    EitherTIdentity.fromRightT(defaultVal, eitherT).valueOf()
-  )
-
-  describe('runEither', () => {
-    it('executes the computation within a trivial EitherTIdentity', () => {
-      const either = EitherTIdentity.of(5)
-      const output = either.runEither()
-      expect(output).toBe(5)
-    })
-  })
-
-  describe('map', () => {
-    it('composes a function into the EitherTIdentity\'s computation', () => {
-      const output = EitherTIdentity.of(2)
-        .map(a => a * 3)
-        .map(a => a * 5)
-        .map(a => a * 7)
-        .runEither()
-      expect(output).toBe(210)
-    })
-  })
-  describe('chain', () => {
-    it('composes Right computations', () => {
-      const output = EitherTIdentity.of(2)
-        .chain(a => EitherTIdentity.of(a * 3))
-        .chain(a => EitherTIdentity.of(a * 5))
-        .runEither()
-      expect(output).toBe(30)
+      const output = Either.fromLeft('ERROR', zipEithers(listA, listB))
+      expect(output).toEqual([ listA, listB ])
     })
 
-    it('skips past Right computations when Left', () => {
-      const output = EitherTIdentity.of(2)
-        .chain(a => EitherTIdentity.of(a * 3))
-        .chain(a => EitherTIdentity.Left.of(a * 5))
-        .chain(a => EitherTIdentity.of(a * 7))
-        .chain(a => EitherTIdentity.of(a * 11))
-        .chain(a => EitherTIdentity.Left.of(a * 13))
-        .runEither()
-      expect(output).toBe(30)
-    })
-  })
+    it('returns a Right of array of arrays of VALUES where both were Right', () => {
+      const a = [ Right.of(1), Left.of(2), Right.of(3), Left.of(4), Right.of(5) ]
+      const b = [ Right.of(1), Right.of(2), Left.of(3), Left.of(4), Right.of(5) ]
 
-  describe('ap', () => {
-    it('applies a EitherTIdentity<fn> to a EitherTIdentity<value>', () => {
-      const valueEither = EitherTIdentity.of(3)
-      const fnEither = EitherTIdentity.of(a => a * 11)
-      const appedEither = valueEither.ap(fnEither)
-      const output = appedEither.runEither()
-      expect(output).toBe(33)
-    })
-  })
+      const output = Either.fromRight('ERROR', zipEithers(a, b))
 
-  describe('fromLeft', () => {
-    it('returns a default value from a Right', () => {
-      const r = EitherTIdentity.Right.of(5)
-      const val = EitherTIdentity.fromLeft('default', r)
-      expect(val).toBe('default')
-    })
-
-    it('returns the computed value from a Left', () => {
-      const l = EitherTIdentity.Left.of(5)
-      const val = EitherTIdentity.fromLeft('default', l)
-      expect(val).toBe(5)
-    })
-  })
-
-  describe('either', () => {
-    it('escapes Left after transformation with leftFn', () => {
-      const output = either(
-        a => a * 3,
-        noop,
-        EitherTIdentity.Left.of(2)
-      )
-      expect(output).toBe(6)
-    })
-
-    it('escapes Right after transformation with rightFn', () => {
-      const output = either(
-        noop,
-        a => a * 3,
-        EitherTIdentity.Right.of(2)
-      )
-      expect(output).toBe(6)
-    })
-  })
-
-  describe('fromRight', () => {
-    it('returns a default value from a Left', () => {
-      const l = EitherTIdentity.Left.of(5)
-      const val = EitherTIdentity.fromRight('default', l)
-      expect(val).toBe('default')
-    })
-
-    it('returns the computed value from a Right', () => {
-      const r = EitherTIdentity.Right.of(5)
-      const val = EitherTIdentity.fromRight('default', r)
-      expect(val).toBe(5)
+      expect(output).toEqual([
+        [ a[0].runEither(), b[0].runEither() ],
+        [ a[4].runEither(), b[4].runEither() ],
+      ])
     })
   })
 })
-

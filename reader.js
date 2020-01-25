@@ -1,77 +1,82 @@
 import Daggy from 'daggy'
 import { always, curry, identity } from 'ramda'
-import { ap, chain, map } from 'fantasy-land'
+import { of, ap, chain, map } from 'fantasy-land'
+import ReaderT from './reader.transform'
+
+
+// ----------------------------------------------------------------- //
+// Flow Types
+// ----------------------------------------------------------------- //
+/*::
+type env = any
+
+type ReaderClass = {
+  (env): ReaderData,
+  of: any => ReaderData
+}
+
+type ReaderData = {
+
+}
+*/
 
 
 
 // ----------------------------------------------------------------- //
-// Standalone
+// Constructors
 // ----------------------------------------------------------------- //
-const Reader = Daggy.tagged('Reader', [ '_fn' ])
-Reader.of = value => Reader(_env => value)
-Reader.ask = () => Reader(env => env)
-Reader.runReader = curry((env, reader) => reader.runReader(env))
+const Reader /*:ReaderClass */ = Daggy.tagged('Reader', [ '_fn' ])
 
+Reader.of = Reader[of] = value => Reader(_env => value)
+Reader.ask = fn => Reader(env => fn ? fn(env) : env)
+Reader.asks = fn => Reader(fn)
+
+
+// ----------------------------------------------------------------- //
+// ADT Methods
+// ----------------------------------------------------------------- //
+Reader.prototype.chain = Reader.prototype[chain] = function(fn) {
+  return Reader(env => {
+    const reader = fn(this.runReader(env))
+    const value = reader.runReader(env)
+    return value
+  })
+}
+Reader.prototype.map = Reader.prototype[map] = function(fn) {
+  return Reader(env => {
+    const thisValue = this.runReader(env)
+    const nextValue = fn(thisValue)
+    return nextValue
+  })
+}
+
+
+// ----------------------------------------------------------------- //
+// Derived ADT Methods
+// ----------------------------------------------------------------- //
 Reader.prototype.ap = Reader.prototype[ap] = function(readerWithFn) {
   return readerWithFn.chain(fn => this.map(fn))
 }
-Reader.prototype.chain = Reader.prototype[chain] = function(fn) {
-  return Reader(env => fn(this._fn(env))._fn(env))
-}
-Reader.prototype.map = Reader.prototype[map] = function(fn) {
-  return Reader(env => fn(this._fn(env)))
-}
+
+
+// ----------------------------------------------------------------- //
+// Reader Methods
+// ----------------------------------------------------------------- //
 Reader.prototype.runReader = function(env) { return this._fn(env) }
-
-Reader.prototype['fantasy-land/ap'] = Reader.prototype.ap
-Reader.prototype['fantasy-land/chain'] = Reader.prototype.chain
-Reader.prototype['fantasy-land/map'] = Reader.prototype.map
-
-
-// ----------------------------------------------------------------- //
-// Transformer
-// ----------------------------------------------------------------- //
-const ReaderT = M => {
-  const ReaderT = Daggy.tagged(`ReaderT${M}}`, [ '_fn' ])
-
-  ReaderT.lift = m => ReaderT(always(m))
-
-  ReaderT.of = a => ReaderT(_env => M.of(a))
-  ReaderT.ask = () => ReaderT(env => M.of(env))
-
-  ReaderT.prototype.map = ReaderT.prototype[map] = function(fn) {
-    return ReaderT(env => {
-      const m = this._fn(env)
-      return m.map(fn)
-    })
-  }
-  ReaderT.prototype.chain = ReaderT.prototype[chain] = function(fn) {
-    return ReaderT(env => {
-      const m = this._fn(env)
-
-      return m.chain(a => {
-        const rtm = fn(a)
-        const m = rtm._fn(env)
-        return m
-      })
-    })
-  }
-
-  ReaderT.prototype.ap = ReaderT.prototype[ap] = function(readerTWithFn) {
-    return readerTWithFn.chain(fn => this.map(fn))
-  }
-
-  ReaderT.prototype.runReaderT = function(env) { return this._fn(env) }
-
-  return ReaderT
+// TODO: Remove local? I don't really see any use for it
+// if we allow for a transform fn in Reader.ask()
+Reader.prototype.local = function(transform) {
+  return Reader.ask()
+    .map(env => this.runReader(transform(env)))
 }
 
 
 // ----------------------------------------------------------------- //
-// Default and PointFree Exports
+// Default and Point-Free Exports
 // ----------------------------------------------------------------- //
 module.exports = Reader
+module.exports.runReader = curry((env, reader) => reader.runReader(env))
+module.exports.local = curry((transform, reader) => {
+  return Reader(transform).chain(() => reader)
+})
 module.exports.ReaderT = ReaderT
-module.exports.runReaderT = curry(
-  (env, reader) => reader.runReaderT(env),
-)

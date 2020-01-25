@@ -3,10 +3,22 @@ import { always, compose, curry } from 'ramda'
 import { ap, chain, map } from 'fantasy-land'
 
 
+// /*::
+// type StateClass = {
+//   (any => any): StateData,
+//   of: any => StateData,
+//   get: () => StateData
+// }
+//
+// type StateData = {
+//
+// }
+// */
+
 // ----------------------------------------------------------------- //
 // Standalone
 // ----------------------------------------------------------------- //
-const State = Daggy.tagged('State', [ '_fn' ])
+const State /*: StateClass */ = Daggy.tagged('State', [ '_fn' ])
 State.of = val => State(state => [ val, state ])
 State.get = () => State(state => [ state, state ])
 State.modify = fn => State(state => [ null, fn(state) ])
@@ -37,7 +49,6 @@ State.prototype.map = function(fn) {
 State.prototype.ap = function(stateWithFn) {
   return stateWithFn.chain(fn => this.map(fn))
 }
-
 
 // ----------------------------------------------------------------- //
 // Transformer

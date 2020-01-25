@@ -1,10 +1,13 @@
 import Daggy from 'daggy'
-import R, { always, compose, curry, ifElse } from 'ramda'
+import R, { always, compose, curry, curryN, filter, ifElse, pipe, zip } from 'ramda'
+import { of, ap, chain, map } from 'fantasy-land'
+
 import { debug, error, info } from '@snrogers/utils/logger'
+import EitherT from './either.transform'
 
 
 // ----------------------------------------------------------------- //
-// Standalone
+// Constructors
 // ----------------------------------------------------------------- //
 const Either = Daggy.taggedSum('Either', {
   Left: [ '_fn' ],
@@ -12,10 +15,52 @@ const Either = Daggy.taggedSum('Either', {
 })
 const { Left, Right } = Either
 
-Either.of = val => Right(() => val)
-Left.of = val => Left(() => val)
-Right.of = val => Right(() => val)
+Either.of = Either[of] = val => Right(() => val)
+Left.of = Left[of] = val => Left(() => val)
+Right.of = Right[of] = val => Right(() => val)
 
+
+// ----------------------------------------------------------------- //
+// ADT Methods
+// ----------------------------------------------------------------- //
+Either.prototype.map = Either.prototype[map] = function (fn) {
+  return this.cata({
+    Left: _fn => Left(_fn),
+    Right: _fn => Right(compose(fn, _fn)),
+  })
+}
+Either.prototype.chain = Either.prototype[chain] = function(fn) {
+  return this.cata({
+    Left: _fn => Left(_fn),
+    Right: _fn => fn(_fn()),
+  })
+}
+
+
+// ----------------------------------------------------------------- //
+// Derived ADT Methods
+// ----------------------------------------------------------------- //
+Either.prototype.ap = Either.prototype[ap] = function(either) {
+  return either.chain(fn => this.map(fn))
+}
+
+
+// ----------------------------------------------------------------- //
+// Either Methods
+// ----------------------------------------------------------------- //
+Either.prototype.either = curry(function(leftFn, rightFn) {
+  return this.cata({
+    Left: _fn => leftFn(_fn()),
+    Right: _fn => rightFn(_fn()),
+  })
+})
+
+Either.prototype.runEither = function() { return this._fn() }
+
+
+// ----------------------------------------------------------------- //
+// Helper Functions
+// ----------------------------------------------------------------- //
 Either.fromLeft = curry((defaultVal, either) => either.cata({
   Left: _fn => _fn(),
   Right: always(defaultVal),
@@ -25,95 +70,16 @@ Either.fromRight = curry((defaultVal, either) => either.cata({
   Right: _fn => _fn(),
 }))
 
-Either.prototype.either = curry(function(leftFn, rightFn) {
-  return this.cata({
-    Left: _fn => leftFn(_fn()),
-    Right: _fn => rightFn(_fn()),
-  })
-})
-
-Either.prototype.runEither = function() { return this._fn() }
-Either.prototype.ap = function(either) { return either.chain(fn => this.map(fn)) }
-Either.prototype.map = function (fn) {
-  return this.cata({
-    Left: _fn => Left(_fn),
-    Right: _fn => Right(compose(fn, _fn)),
-  })
-}
-Either.prototype.chain = function(fn) {
-  return this.cata({
-    Left: _fn => Left(_fn),
-    Right: _fn => fn(_fn()),
-  })
-}
-
-// ----------------------------------------------------------------- //
-// Transformer
-// ----------------------------------------------------------------- //
-const EitherT = Monad => {
-  const EitherT = Daggy.tagged(`EitherT${Monad}`, [ '_fn' ])
-  EitherT.of = val => EitherT(() => compose(Monad.of, Right.of)(val))
-  EitherT.Left = { of:  val => EitherT(() => compose(Monad.of, Left.of)(val)) }
-  EitherT.Right = { of: val => EitherT.of(val) }
-
-  EitherT.fromLeftT = curry((defaultVal, eitherT) => {
-    const m = eitherT._fn()
-    return m.map(either => either.cata({
-      Left: _fn => _fn(),
-      Right: always(defaultVal),
-    }))
-  })
-  EitherT.fromRightT = curry((defaultVal, eitherT) => {
-    const m = eitherT._fn()
-    return m.map(either => either.cata({
-      Left: always(defaultVal),
-      Right: _fn => _fn(),
-    }))
-  })
-
-  EitherT.prototype.map = function(fn) {
-    const m = this._fn()
-    return EitherT(() => {
-      return m.map(either => either.cata({
-        Left: always(either),
-        Right: _fn => Right(compose(fn, _fn)),
-      }))
-    })
-  }
-  EitherT.prototype.chain = function(fn) {
-    const m = this._fn()
-    return EitherT(() => {
-      return m.chain(inner => {
-        return inner.cata({ // Either
-          Left: _fn => Monad.of(Left(_fn)),
-          Right: _fn => {
-            const eitherT = fn(_fn())
-            const m = eitherT._fn()
-            return m
-          },
-        })
-      })
-    })
-  }
-  EitherT.prototype.ap = function(eitherTM) {
-    return eitherTM.chain(fn => this.map(fn))
-  }
-
-  EitherT.prototype.eitherT = curry(function(leftFn, rightFn) {
-    const m = this._fn()
-    return m.map(either => either.cata({
-      Left: _fn => leftFn(_fn()),
-      Right: _fn => rightFn(_fn()),
-    }))
-  })
-
-  EitherT.prototype.runEitherT = function() {
-    const m = this._fn()
-    return m.map(either => either.runEither())
-  }
-
-  return EitherT
-}
+Either.zipEithers = R.curryN(2, pipe(
+  (listA, listB) => [ listA, listB ],
+  ifElse(([ a, b ]) => a.length !== b.length,
+    lists => Left.of(lists),
+    pipe(
+      lists => zip(...lists),
+      filter(([ a, b ]) => Right.is(a) && Right.is(b)),
+      R.map(R.map(either => either.runEither())),
+      Either.Right.of
+    ))))
 
 
 
@@ -127,4 +93,3 @@ module.exports.either = curry((leftFn, rightFn, either) => {
   return either.either(leftFn, rightFn)
 })
 module.exports.runEither = either => either.runEither()
-module.exports.map = curry((mapFn, either) => either.map(mapFn))

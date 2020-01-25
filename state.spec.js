@@ -29,6 +29,8 @@ describe('State Monad Standalone', () => {
       expect(output).toBe(10)
     })
 
+    State.of
+
     it('works with get', () => {
       const state = State.of(2)
       const output = state
@@ -99,7 +101,7 @@ describe('State Monad Standalone', () => {
   })
 })
 
-describe.only('State Monad Transformer (StateTIdentity', () => {
+describe('State Monad Transformer (StateTIdentity', () => {
   // NOTE: `execState(s)` and `evalState(s)` derive from `runState(s)`,
   // so we only need to update `runState(s)`
   const StateTIdentity = StateT(Identity)
@@ -134,7 +136,7 @@ describe.only('State Monad Transformer (StateTIdentity', () => {
     })
   })
 
-  describe.only('chain', () => {
+  describe('chain', () => {
     it('works with trivial chaining', () => {
       const output = StateTIdentity.of(2)
         .chain(a => StateTIdentity.of(a * 5))
