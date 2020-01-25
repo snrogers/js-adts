@@ -1,5 +1,6 @@
 import Daggy from 'daggy'
-import R, { always, compose, curry, curryN, filter, ifElse, pipe, zip } from 'ramda'
+import * as R from 'ramda'
+import { always, compose, curry, curryN, filter, ifElse, pipe, zip } from 'ramda'
 import { of, ap, chain, map } from 'fantasy-land'
 
 import EitherT from './either.transform'
@@ -73,7 +74,7 @@ Either.fromRight = curry((defaultVal, either) => either.cata({
   Right: _fn => _fn(),
 }))
 Either.runEither = either => either.runEither()
-Either.zipEithers = R.curryN(2, pipe(
+Either.zipEithers = curryN(2, pipe(
   (listA, listB) => [ listA, listB ],
   ifElse(([ a, b ]) => a.length !== b.length,
     lists => Left.of(lists),

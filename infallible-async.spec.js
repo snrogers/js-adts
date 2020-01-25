@@ -1,5 +1,5 @@
 import Async from './infallible-async'
-import R from 'ramda'
+import * as R from 'ramda'
 
 const noop = () => {}
 

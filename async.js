@@ -1,6 +1,7 @@
 import Daggy from 'daggy'
 import { of } from 'fantasy-land'
-import R, { compose, curry } from 'ramda'
+import * as R from 'ramda'
+import { compose, curry } from 'ramda'
 
 
 // TODO: Safety checks on functions/methods

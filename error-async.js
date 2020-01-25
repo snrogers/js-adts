@@ -1,6 +1,7 @@
 import InfallibleAsync from './infallible-async'
 import MonadError, { MonadErrorT } from './monad-error'
-import R, { compose } from 'ramda'
+import * as R from 'ramda'
+import { compose } from 'ramda'
 
 const ErrorAsync = MonadErrorT(InfallibleAsync)
 ErrorAsync.defer = fn => {

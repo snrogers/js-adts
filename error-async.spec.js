@@ -1,5 +1,6 @@
 import ErrorAsync from './error-async'
-import R, { __, compose, concat } from 'ramda'
+import * as R from 'ramda'
+import { __, compose, concat } from 'ramda'
 
 describe('ErrorAsync Monad', () => {
   describe('ErrorAsync.of', () => {

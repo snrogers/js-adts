@@ -1,7 +1,8 @@
 import MonadError, { catchError, throwError, MonadErrorT } from './monad-error'
 import Identity from './identity'
 import Daggy from 'daggy'
-import R, { __, append, concat, chain, compose, map } from 'ramda'
+import * as R from 'ramda'
+import { __, append, concat, chain, compose, map } from 'ramda'
 
 const flow = val => (...fns) => R.pipe(...fns)(val)
 
