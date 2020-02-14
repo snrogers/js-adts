@@ -1,11 +1,15 @@
+import * as R from 'ramda'
+
 import Either, {
   Left,
   Right,
   either,
   fromLeft,
   fromRight,
+  runEither,
   zipEithers,
 } from './either'
+
 
 
 // ----------------------------------------------------------------- //

@@ -1,5 +1,5 @@
 import Identity, { IdentityT } from './identity'
-import { multiply } from 'ramda'
+import { concat, multiply } from 'ramda'
 
 describe('Identity', () => {
   describe('of', () => {
@@ -45,9 +45,9 @@ describe('Identity', () => {
 
 describe('IdentityTIdentity', () => {
   const IdentityTIdentity = IdentityT(Identity)
-  IdentityTIdentity.prototype.valueOf = (itiValueOf => {
-    return function() { return itiValueOf.call(this).valueOf() }
-  })(IdentityTIdentity.prototype.valueOf)
+  IdentityTIdentity.prototype.valueOf = function() {
+    return this.valueOfT().valueOf()
+  }
 
   describe('of', () => {
     it('works', () => {
@@ -59,9 +59,9 @@ describe('IdentityTIdentity', () => {
 
   describe('map', () => {
     it('works', () => {
-      const id = IdentityTIdentity.of(2)
-      const output = id.map(multiply(3)).valueOf()
-      expect(output).toBe(6)
+      const id = IdentityTIdentity.of('a')
+      const output = id.map(a => a + 'b').valueOf()
+      expect(output).toBe('ab')
     })
   })
 

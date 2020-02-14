@@ -72,11 +72,19 @@ Reader.prototype.local = function(transform) {
 
 
 // ----------------------------------------------------------------- //
-// Default and Point-Free Exports
+// Helper Functions
 // ----------------------------------------------------------------- //
-module.exports = Reader
-module.exports.runReader = curry((env, reader) => reader.runReader(env))
-module.exports.local = curry((transform, reader) => {
+Reader.runReader = curry((env, reader) => reader.runReader(env))
+Reader.local = curry((transform, reader) => {
   return Reader(transform).chain(() => reader)
 })
-module.exports.ReaderT = ReaderT
+
+
+// ----------------------------------------------------------------- //
+// Default and Point-Free Exports
+// ----------------------------------------------------------------- //
+export default Reader
+export { ReaderT }
+
+export const runReader = Reader.runReader
+export const local = Reader.local

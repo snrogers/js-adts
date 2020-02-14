@@ -25,36 +25,36 @@ Identity.prototype.valueOf = function() { return this._fn() }
 // Transformer
 // ----------------------------------------------------------------- //
 const IdentityT = Monad => {
-  const IdentityTMonad = Daggy.tagged(`IdentityT${Monad}`, [ '_fn' ])
-  IdentityTMonad.of = value => IdentityTMonad(() => Monad.of(value))
-  IdentityTMonad.lift = m => IdentityTMonad(always(m))
+  const IdentityT = Daggy.tagged(`IdentityT${Monad}`, [ '_fn' ])
+  IdentityT.of = value => IdentityT(() => Monad.of(value))
+  IdentityT.lift = m => IdentityT(always(m))
 
-  IdentityTMonad.prototype.map = function(fn) {
-    const m = this._fn()
-    return IdentityTMonad.of(m.map(
-      a => fn(a)
-    ))
+  IdentityT.prototype.map = function(fn) {
+    return IdentityT(() => {
+      const m = this.valueOfT()
+      return m.map(a => fn(a))
+    })
   }
-  IdentityTMonad.prototype.chain = function(fn) {
-    return IdentityTMonad(() => {
-      const m = this._fn()
+  IdentityT.prototype.chain = function(fn) {
+    return IdentityT(() => {
+      const m = this.valueOfT()
       return m.chain(a => {
         const itm = fn(a)
-        return itm.valueOf()
+        return itm.valueOfT()
       })
     })
   }
-  IdentityTMonad.prototype.ap = function(itmWithFn) {
+  IdentityT.prototype.ap = function(itmWithFn) {
     return itmWithFn.chain(fn => this.map(fn))
   }
 
-  IdentityTMonad.prototype.valueOf = function() { return this._fn() }
+  IdentityT.prototype.valueOfT = function() { return this._fn() }
 
-  IdentityTMonad.prototype['fantasy-land/ap'] = IdentityTMonad.prototype.ap
-  IdentityTMonad.prototype['fantasy-land/chain'] = IdentityTMonad.prototype.chain
-  IdentityTMonad.prototype['fantasy-land/map'] = IdentityTMonad.prototype.map
+  IdentityT.prototype['fantasy-land/ap'] = IdentityT.prototype.ap
+  IdentityT.prototype['fantasy-land/chain'] = IdentityT.prototype.chain
+  IdentityT.prototype['fantasy-land/map'] = IdentityT.prototype.map
 
-  return IdentityTMonad
+  return IdentityT
 }
 
 

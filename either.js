@@ -82,7 +82,7 @@ Either.zipEithers = curryN(2, pipe(
       lists => zip(...lists),
       filter(([ a, b ]) => Right.is(a) && Right.is(b)),
       R.map(R.map(either => either.runEither())),
-      Either.Right.of
+      Either.Right.of,
     ))))
 
 
@@ -92,8 +92,10 @@ Either.zipEithers = curryN(2, pipe(
 // Default and PointFree Exports
 // ----------------------------------------------------------------- //
 export default Either
-
 export { EitherT, Left, Right }
+
 export const either = Either.either
+export const fromLeft = Either.fromLeft
+export const fromRight = Either.fromRight
 export const runEither = Either.runEither
 export const zipEithers = Either.zipEithers
