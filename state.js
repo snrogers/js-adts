@@ -21,6 +21,8 @@ State.put = state => State.modify(always(state))
 State.prototype.chain = function(fn) {
   return State(s => {
     const [ val, state ] = this.runState(s)
+    console.log('fromStateChain', val, state)
+    console.log('fn', fn.toString())
     return fn(val).runState(state)
   })
 }
@@ -41,7 +43,9 @@ State.prototype.ap = function(stateWithFn) {
 // State Methods
 // ----------------------------------------------------------------- //
 State.prototype.runState = function(initialState) {
-  return this._fn(initialState)
+  const valAndState = this._fn(initialState)
+  console.log('valAndState', valAndState)
+  return valAndState
 }
 State.prototype.evalState = function(initialState) {
   const [ val, _state ] = this.runState(initialState)
@@ -52,19 +56,22 @@ State.prototype.execState = function(initialState) {
   return state
 }
 
+// alias runState
+State.prototype.run = State.prototype.runState
+
 
 
 // ----------------------------------------------------------------- //
 // Helper Functions
 // ----------------------------------------------------------------- //
 State.runState = curry(
-  (monad, initState) => monad.runState(initState),
+  (initState, monad) => monad.runState(initState),
 )
 State.evalState = curry(
-  (monad, initState) => monad.evalState(initState),
+  (initState, monad) => monad.evalState(initState),
 )
 State.execState = curry(
-  (monad, initState) => monad.execState(initState),
+  (initState, monad) => monad.execState(initState),
 )
 
 

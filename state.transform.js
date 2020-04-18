@@ -22,11 +22,11 @@ export const StateT = M => {
   // Constructors
   // ----------------------------------------------------------------- //
   const StateT = Daggy.tagged(`StateT${M}`, [ '_fn' ])
-  StateT.of = StateT[of] = val => StateT(s => M.of([ val, s ]))
-  StateT.lift = m => StateT(s => m.map(val => [ val, s ]))
-  StateT.get = () => StateT(s => M.of([ s, s ]))
-  StateT.modify = fn => StateT(s => M.of([ null, fn(s) ]))
-  StateT.put = s => StateT(() => M.of([ null, s ]))
+  StateT.of = StateT[of] = val => StateT(s => M.of({ val, s }))
+  StateT.lift = m => StateT(s => m.map(val => { val, s }))
+  StateT.get = () => StateT(s => M.of({ val:s, s }))
+  StateT.modify = fn => StateT(s => M.of({ val: null, s: fn(s) }))
+  StateT.put = s => StateT(() => M.of({ val: null, s }))
 
 
   // ----------------------------------------------------------------- //
@@ -36,7 +36,9 @@ export const StateT = M => {
     return StateT(s0 => {
       const m = this._fn(s0)
 
-      return m.chain(([ val, s1 ]) => {
+      console.log('m', m.toString())
+
+      return m.chain(({ val, s: s1 }) => {
         const stm = fn(val)
         const mNext = stm._fn(s1)
         return mNext
@@ -44,13 +46,22 @@ export const StateT = M => {
     })
   }
 
+  StateT.prototype.map = StateT.prototype[map] = function(fn) {
+    return this.chain(m => {
+      console.log('PING')
+      const mappedM = m.map(fn)
+      console.log('mappedM', mappedM.run())
+      return StateT.of(mappedM)
+    })
+  }
+  StateT.prototype._mapBroken = StateT.prototype[map] = function(fn) {
+    return this.chain(compose(StateT.of, fn))
+  }
+
 
   // ----------------------------------------------------------------- //
   // Derived ADT Methods
   // ----------------------------------------------------------------- //
-  StateT.prototype.map = StateT.prototype[map] = function(fn) {
-    return this.chain(compose(StateT.of, fn))
-  }
   StateT.prototype.ap = StateT.prototype[ap] = function(stmWithFn) {
     return stmWithFn.chain(fn => this.map(fn))
   }
@@ -65,11 +76,16 @@ export const StateT = M => {
   }
   StateT.prototype.evalStateT = function(initState) {
     const m = this._fn(initState)
-    return m.map(([ v, _s ]) => v)
+    console.log('[evalStateT] evaledM', m.run())
+
+    const listM = m.map(({ val, s }) => console.log('valInMap', val) || val)
+    console.log('[evalStateT] mappedM', listM.run())
+
+    return listM
   }
   StateT.prototype.execStateT = function(initState) {
     const m = this._fn(initState)
-    return m.map(([ _v, s ]) => s)
+    return m.map(({ val, s }) => s)
   }
 
 

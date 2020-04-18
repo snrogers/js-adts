@@ -1,7 +1,7 @@
 import Daggy from 'daggy'
 import * as R from 'ramda'
 import { always, compose, curry, curryN, filter, ifElse, pipe, zip } from 'ramda'
-import { of, ap, chain, map } from 'fantasy-land'
+import { of, ap, chain, map, reduce, traverse } from 'fantasy-land'
 
 import EitherT from './either.transform'
 
@@ -33,6 +33,25 @@ Either.prototype.chain = Either.prototype[chain] = function(fn) {
   return this.cata({
     Left: _fn => Left(_fn),
     Right: _fn => fn(_fn()),
+  })
+}
+// reduce :: Foldable f => f a ~> ((b, a) -> b, b) -> b
+// reduce :: Either a b ~> ((c, b) -> c, c) -> c
+Either.prototype.reduce = Either.prototype[reduce] = function(foldFn, b) {
+  return this.cata({
+    Left: () => b,
+    Right: _fn => foldFn(b, this._fn()),
+  })
+}
+
+// traverse :: Applicative f, Traversable t =>
+//   t a ~> (TypeRep f, a -> f b) -> f (t b)
+// traverse :: Applicative f =>
+//   Either a b ~> (TypeRep f, b -> f c) -> f (Either a c)
+Either.prototype.traverse = Either.prototype[traverse] = function(F, fn) {
+  return this.cata({
+    Left: _fn => F.of(Either.left(_fn())),
+    Right: _fn => fn(_fn()).map(Either.Right),
   })
 }
 

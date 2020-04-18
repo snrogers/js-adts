@@ -1,7 +1,7 @@
 import Identity, { IdentityT } from './identity'
-import { concat, multiply } from 'ramda'
+import * as R from 'ramda'
 
-describe('Identity', () => {
+describe.only('Identity', () => {
   describe('of', () => {
     it('works', () => {
       const id = Identity.of(1)
@@ -13,7 +13,7 @@ describe('Identity', () => {
   describe('map', () => {
     it('works', () => {
       const id = Identity.of(2)
-      const output = id.map(multiply(3)).valueOf()
+      const output = id.map(R.multiply(3)).valueOf()
       expect(output).toBe(6)
     })
   })
@@ -29,8 +29,26 @@ describe('Identity', () => {
   describe('ap', () => {
     it('works', () => {
       const id = Identity.of(3)
-      const output = id.ap(Identity.of(multiply(7))).valueOf()
+      const output = id.ap(Identity.of(R.multiply(7))).valueOf()
       expect(output).toBe(21)
+    })
+
+    it('works with R.sequence(Identity.of, listOfIdentities)', () => {
+      const input = [ Identity.of(1), Identity.of(2), Identity.of(3) ]
+      const sequenced = R.sequence(Identity.of, input)
+      const output = sequenced.runIdentity()
+
+      expect(output).toEqual([ 1, 2, 3 ])
+    })
+
+    it.only('works with R.sequence(R.of, IdentityOfList)', () => {
+      const input = Identity.of([ 1, 2, 3 ])
+      const sequenced = R.sequence(R.of, input)
+
+      console.log('seuqneced', sequenced)
+      const output = sequenced.map(Identity.runIdentity)
+
+      expect(output).toEqual([ 1, 2, 3 ])
     })
   })
 
@@ -76,7 +94,7 @@ describe('IdentityTIdentity', () => {
   describe('ap', () => {
     it('works', () => {
       const id = IdentityTIdentity.of(3)
-      const output = id.ap(IdentityTIdentity.of(multiply(7))).valueOf()
+      const output = id.ap(IdentityTIdentity.of(R.multiply(7))).valueOf()
       expect(output).toBe(21)
     })
   })

@@ -68,6 +68,23 @@ describe('Either Monad', () => {
       const output = appedEither.runEither()
       expect(output).toBe(33)
     })
+
+    it('works with R.sequence(Identity.of, listOfIdentities)', () => {
+      const input = [ Right.of(1), Right.of(2), Right.of(3) ]
+      const sequenced = R.sequence(Right.of, input)
+      const output = sequenced.runEither()
+
+      expect(output).toEqual([ 1, 2, 3 ])
+    })
+
+    it.only('works with R.sequence(R.of, RightOfList)', () => {
+      const input = Right.of([ 1, 2, 3 ])
+      const sequenced = R.sequence(R.of, input)
+      console.log('seuqneced', sequenced)
+      const output = sequenced.map(Either.runEither)
+
+      expect(output).toEqual([ 1, 2, 3 ])
+    })
   })
 
   describe('either', () => {

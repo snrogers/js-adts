@@ -1,24 +1,60 @@
 import Daggy from 'daggy'
-import { always, compose } from 'ramda'
+import * as R from 'ramda'
 import { ap, chain, map, of } from 'fantasy-land'
 
 
 // ----------------------------------------------------------------- //
 // Standalone
 // ----------------------------------------------------------------- //
+
+
+// ----------------------------------------------------------------- //
+// Constructors
+// ----------------------------------------------------------------- //
 const Identity = Daggy.tagged('Identity', [ '_fn' ])
-Identity.of = a => Identity(always(a))
-Identity.prototype.ap = function(identityWithFn) {
-  return identityWithFn.chain(fn => this.map(fn))
-}
-Identity.prototype.join = function() { return this._fn() }
+Identity.of = a => Identity(() => a)
+
+
+// ----------------------------------------------------------------- //
+// ADT Methods
+// ----------------------------------------------------------------- //
 Identity.prototype.map = function(fn) {
-  return compose(Identity.of, fn)(this._fn())
+  const val = this._fn()
+  console.log('[Identity.map]: val', val.toString())
+  if (R.is(Function, val))
+    console.log('[Identity.map]: val (as function)', val(1).toString())
+  return Identity(() => fn(val))
 }
 Identity.prototype.chain = function(fn) {
-  return fn(this._fn())
+  const val = this._fn()
+  return fn(val)
 }
-Identity.prototype.valueOf = function() { return this._fn() }
+
+
+// ----------------------------------------------------------------- //
+// Derived Methods
+// ----------------------------------------------------------------- //
+Identity.prototype.ap = function(identityWithFn) {
+  console.log('identityWithFn', identityWithFn.toString())
+  console.log('identityWithFn', identityWithFn._fn().toString())
+  console.log('identityWithFn', identityWithFn.runIdentity())
+  return identityWithFn.chain(fn => this.map(fn))
+}
+
+
+// ----------------------------------------------------------------- //
+// Identity Methods
+// ----------------------------------------------------------------- //
+Identity.prototype.join = function() { return this._fn() }
+Identity.prototype.runIdentity = function() { return this._fn() }
+
+// Alias runIdentity
+Identity.prototype.run = Identity.prototype.runIdentity
+Identity.prototype.valueOf = Identity.prototype.runIdentity
+
+// PFF
+Identity.runIdentity = Identity.run = Identity.valueOf =
+  idM => idM.runIdentity()
 
 
 // ----------------------------------------------------------------- //
@@ -27,7 +63,7 @@ Identity.prototype.valueOf = function() { return this._fn() }
 const IdentityT = Monad => {
   const IdentityT = Daggy.tagged(`IdentityT${Monad}`, [ '_fn' ])
   IdentityT.of = value => IdentityT(() => Monad.of(value))
-  IdentityT.lift = m => IdentityT(always(m))
+  IdentityT.lift = m => IdentityT(() => m)
 
   IdentityT.prototype.map = function(fn) {
     return IdentityT(() => {
