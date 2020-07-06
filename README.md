@@ -1,1 +1,1 @@
-A repo for experimenting with monads in JS
+A repo for experimenting with ADTs in JS
