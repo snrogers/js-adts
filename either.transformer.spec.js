@@ -1,7 +1,7 @@
 import { curry } from 'ramda'
 
 import Identity from './identity'
-import EitherT, { either, runEitherT } from './either.transform'
+import EitherT, { either, runEitherT } from './either.transformer'
 
 
 // ----------------------------------------------------------------- //
@@ -22,10 +22,10 @@ describe('EitherTIdentity Monad', () => {
     return this.eitherT(leftFn, rightFn).valueOf()
   })
   EitherTIdentity.fromLeft = curry((defaultVal, eitherT) =>
-    EitherTIdentity.fromLeftT(defaultVal, eitherT).valueOf()
+    EitherTIdentity.fromLeftT(defaultVal, eitherT).valueOf(),
   )
   EitherTIdentity.fromRight = curry((defaultVal, eitherT) =>
-    EitherTIdentity.fromRightT(defaultVal, eitherT).valueOf()
+    EitherTIdentity.fromRightT(defaultVal, eitherT).valueOf(),
   )
 
   describe('runEither', () => {
@@ -96,7 +96,7 @@ describe('EitherTIdentity Monad', () => {
       const output = either(
         a => a * 3,
         noop,
-        EitherTIdentity.Left.of(2)
+        EitherTIdentity.Left.of(2),
       )
       expect(output).toBe(6)
     })
@@ -105,7 +105,7 @@ describe('EitherTIdentity Monad', () => {
       const output = either(
         noop,
         a => a * 3,
-        EitherTIdentity.Right.of(2)
+        EitherTIdentity.Right.of(2),
       )
       expect(output).toBe(6)
     })
